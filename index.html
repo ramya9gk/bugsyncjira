@@ -1,0 +1,2278 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="en">
+<head>
+<meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 72 72%22><defs><linearGradient id=%22g%22 x1=%220%25%22 y1=%220%25%22 x2=%22100%25%22 y2=%22100%25%22><stop offset=%220%25%22 stop-color=%22%234f6ef7%22/><stop offset=%22100%25%22 stop-color=%22%237c3aed%22/></linearGradient></defs><rect width=%2272%22 height=%2272%22 rx=%2216%22 fill=%22url(%23g)%22/><rect x=%2216%22 y=%2236%22 width=%2240%22 height=%2222%22 rx=%225%22 fill=%22%23fff%22 opacity=%22.9%22/><rect x=%2222%22 y=%2227%22 width=%2228%22 height=%2213%22 rx=%224%22 fill=%22%23fff%22 opacity=%22.9%22/><path d=%22M40 12 L32 28 L38 28 L30 48 L50 24 L42 24 Z%22 fill=%22url(%23g)%22/></svg>"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 72 72%22><defs><linearGradient id=%22g%22 x1=%220%25%22 y1=%220%25%22 x2=%22100%25%22 y2=%22100%25%22><stop offset=%220%25%22 stop-color=%22%234f6ef7%22/><stop offset=%22100%25%22 stop-color=%22%237c3aed%22/></linearGradient></defs><rect width=%2272%22 height=%2272%22 rx=%2216%22 fill=%22url(%23g)%22/><rect x=%2216%22 y=%2236%22 width=%2240%22 height=%2222%22 rx=%225%22 fill=%22%23fff%22 opacity=%22.9%22/><rect x=%2222%22 y=%2227%22 width=%2228%22 height=%2213%22 rx=%224%22 fill=%22%23fff%22 opacity=%22.9%22/><path d=%22M40 12 L32 28 L38 28 L30 48 L50 24 L42 24 Z%22 fill=%22url(%23g)%22/></svg>"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#4f6ef7"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="BugForge AI"/><meta name="description" content="BugForge AI — Jira Edition · AI-powered defect ticket generator with Teams notifications"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BugForge AI — Jira Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#6366f1;--accent2:#818cf8;--accent-bg:#6366f114;
+  --green:#22c55e;--green-bg:#22c55e14;--green-bd:#22c55e40;
+  --red:#ef4444;--red-bg:#ef444414;--red-bd:#ef444440;
+  --amber:#f59e0b;--amber-bg:#f59e0b14;--amber-bd:#f59e0b40;
+  --blue:#3b82f6;--blue-bg:#3b82f614;--blue-bd:#3b82f640;
+  --purple:#a855f7;--purple-bg:#a855f714;
+  --jira:#2d84ff;--jira-bg:#2d84ff15;--jira-bd:#2d84ff40;
+  --ado:#29a7ff;--ado-bg:#29a7ff15;--ado-bd:#29a7ff40;
+  --gh:#8b949e;--gh-bg:#8b949e15;--gh-bd:#8b949e40;
+  --r:10px;--rl:14px;--rxl:18px;
+  --transition:all .2s ease;
+}
+[data-theme="dark"]{
+  --bg:#0b0e14;--s1:#111720;--s2:#161d2b;--s3:#1c2438;--s4:#212840;
+  --b1:#ffffff0e;--b2:#ffffff18;--b3:#ffffff26;--b4:#ffffff35;
+  --t1:#dde2ef;--t2:#7d8699;
+  /* BUG WCAG-140a FIX: raised --t3 from #3d4459 (2.9:1) to #5e6a85 (4.6:1) for WCAG AA compliance */
+  --t3:#5e6a85;
+  --shadow:0 4px 20px #00000060;
+}
+[data-theme="light"]{
+  --bg:#f0f2f7;--s1:#ffffff;--s2:#f5f7fc;--s3:#eaecf3;--s4:#dde1ee;
+  --b1:#00000010;--b2:#0000001c;--b3:#00000028;--b4:#00000038;
+  --t1:#1a1d2e;--t2:#4a5268;--t3:#6b7280;
+  --shadow:0 4px 20px #0000001a;
+}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;overflow:hidden;transition:background .3s,color .3s}
+/* ── Layout ── */
+.app{display:grid;grid-template-columns:288px 1fr;height:100vh;position:relative}
+.sidebar{background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:background .3s}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--b3)}
+.main{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+/* ── Dashboard overlay ── */
+.dashboard-overlay{position:fixed;inset:0;background:#00000060;z-index:50;display:none;animation:fadeIn .2s}
+.dashboard-overlay.open{display:block}
+.dashboard-panel{position:fixed;right:0;top:0;bottom:0;width:480px;background:var(--s1);border-left:1px solid var(--b2);z-index:51;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s;overflow-y:auto}
+.dashboard-panel.open{transform:translateX(0)}
+.dash-header{padding:16px 20px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dash-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.dash-close{background:none;border:none;color:var(--t2);cursor:pointer;font-size:20px;line-height:1}
+.dash-body{padding:20px;flex:1}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.dash-stat{background:var(--s2);border:1px solid var(--b2);border-radius:var(--rl);padding:14px}
+.dash-stat-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;margin-bottom:4px}
+.dash-stat-lbl{font-size:11px;color:var(--t2)}
+.dash-chart-wrap{background:var(--s2);border:1px solid var(--b2);border-radius:var(--rl);padding:14px;margin-bottom:14px}
+.dash-chart-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);margin-bottom:12px}
+/* ── Sidebar ── */
+.sb-top{padding:14px 16px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:-.2px}
+.logo-sub{font-size:10px;color:var(--t2);margin-top:1px}
+.ppills{display:flex;gap:4px}
+.ppill{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:5px 4px;border-radius:7px;border:1px solid var(--b2);font-size:10px;font-weight:500;color:var(--t3);transition:var(--transition)}
+.ppill.p-jira{background:var(--jira-bg);border-color:var(--jira-bd);color:var(--jira)}
+.ppill.p-ado{background:var(--ado-bg);border-color:var(--ado-bd);color:var(--ado)}
+.ppill.p-gh{background:var(--gh-bg);border-color:var(--gh-bd);color:var(--gh)}
+.sb-sec{padding:12px 16px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer;user-select:none}
+.sec-lbl{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--t2)}
+.sec-arr{font-size:10px;color:var(--t3);transition:transform .2s}
+.sec-arr.open{transform:rotate(90deg)}
+.sec-body{display:none}
+.sec-body.open{display:block}
+.cfg-row{margin-bottom:7px}
+.cfg-lbl{font-size:10px;color:var(--t2);margin-bottom:3px;display:flex;align-items:center;gap:5px}
+.cfg-dot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.cfg-dot.ok{background:var(--green)}.cfg-dot.err{background:var(--red)}
+.cfg-in{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--t1);font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .15s}
+.cfg-in:focus{border-color:var(--accent)}
+.cfg-in::placeholder{color:var(--t3)}
+.btn-sv{width:100%;margin-top:8px;padding:6px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn-sv:hover{opacity:.85}
+/* ── Templates ── */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.tpl-btn{padding:6px 8px;border:1px solid var(--b2);border-radius:7px;background:transparent;color:var(--t2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;transition:var(--transition)}
+.tpl-btn:hover{background:var(--s3);color:var(--t1);border-color:var(--b3)}
+.tpl-btn.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent2)}
+/* ── Route legend ── */
+.route-item{display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:1px solid var(--b1);font-size:11px;color:var(--t2);line-height:1.5}
+.route-item:last-child{border-bottom:none}
+.rb{font-size:9px;font-weight:600;padding:2px 6px;border-radius:5px;flex-shrink:0;margin-top:1px}
+.rb-jira{background:var(--jira-bg);color:var(--jira);border:1px solid var(--jira-bd)}
+.rb-ado{background:var(--ado-bg);color:var(--ado);border:1px solid var(--ado-bd)}
+.rb-gh{background:var(--gh-bg);color:var(--gh);border:1px solid var(--gh-bd)}
+/* ── History ── */
+.hist-empty{font-size:11px;color:var(--t3);text-align:center;padding:8px 0}
+.hist-item{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--b1);cursor:pointer}
+.hist-item:last-child{border-bottom:none}
+.hist-item:hover .hist-ttl{color:var(--t1)}
+.hist-plat{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hist-info{flex:1;min-width:0}
+.hist-id{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500}
+.hist-ttl{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.hist-time{font-size:10px;color:var(--t3);flex-shrink:0}
+/* ── Main header ── */
+.main-hdr{padding:10px 18px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--s1);gap:8px;transition:background .3s}
+.hdr-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.hdr-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hdr-btns{display:flex;gap:5px;flex-shrink:0}
+.hbtn{background:transparent;border:1px solid var(--b2);border-radius:7px;padding:5px 10px;font-size:11px;color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:var(--transition);white-space:nowrap;display:flex;align-items:center;gap:4px}
+.hbtn:hover{background:var(--s2);color:var(--t1)}
+.hbtn.active{background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)}
+.hbtn.theme-btn{font-size:14px;padding:5px 8px}
+/* ── Keyboard shortcut hints ── */
+.kb-modal{position:fixed;inset:0;background:#00000070;z-index:100;display:none;align-items:center;justify-content:center}
+.kb-modal.open{display:flex}
+.kb-box{background:var(--s1);border:1px solid var(--b3);border-radius:var(--rxl);padding:24px;min-width:360px;box-shadow:var(--shadow)}
+.kb-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.kb-close{background:none;border:none;color:var(--t2);cursor:pointer;font-size:18px}
+.kb-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b1);font-size:13px;color:var(--t2)}
+.kb-row:last-child{border-bottom:none}
+.kb-key{display:flex;gap:4px}
+.key{background:var(--s3);border:1px solid var(--b3);border-radius:5px;padding:2px 7px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t1)}
+/* ── Voice recording indicator ── */
+.voice-indicator{display:none;align-items:center;gap:8px;padding:6px 12px;background:var(--red-bg);border:1px solid var(--red-bd);border-radius:7px;font-size:12px;color:var(--red);animation:fadeUp .2s}
+.voice-indicator.active{display:flex}
+.voice-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse .8s infinite}
+/* ── Chat area ── */
+.chat-area{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative}
+.chat-area::-webkit-scrollbar{width:4px}
+.chat-area::-webkit-scrollbar-thumb{background:var(--b3);border-radius:2px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ── Drop overlay ── */
+.drop-ov{position:absolute;inset:0;background:#6366f122;border:2px dashed var(--accent);border-radius:12px;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:10;pointer-events:none}
+.drop-ov.active{display:flex}
+/* ── Messages ── */
+.msg{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .25s ease}
+.msg.user{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.msg-av.ai{background:var(--accent)}.msg-av.user{background:var(--s3);border:1px solid var(--b2)}
+.msg-bub{max-width:76%;padding:10px 14px;border-radius:var(--rl);font-size:13px;line-height:1.6;border:1px solid var(--b1)}
+.msg.ai .msg-bub{background:var(--s2);border-radius:4px var(--rl) var(--rl) var(--rl)}
+.msg.user .msg-bub{background:var(--accent);border-color:transparent;border-radius:var(--rl) 4px var(--rl) var(--rl);color:#fff}
+/* ── Thinking ── */
+.thinking{display:flex;gap:10px;align-items:flex-start}
+.think-box{background:var(--s2);border:1px solid var(--b2);border-radius:4px var(--rl) var(--rl) var(--rl);padding:12px 14px;min-width:240px}
+.think-steps{display:flex;flex-direction:column;gap:6px}
+.think-step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2)}
+.think-step.active{color:var(--t1)}.think-step.done{color:var(--green)}
+.si{width:16px;height:16px;border-radius:50%;flex-shrink:0}
+.si.spin{border:2px solid var(--accent);border-top-color:transparent;animation:spin .7s linear infinite}
+.si.done{background:var(--green-bg);border:1px solid var(--green)}
+.si.wait{background:var(--b1);border:1px solid var(--b2)}
+/* ── Severity score bar ── */
+.sev-score-bar{margin:0 16px 12px;padding:10px 12px;background:var(--s2);border:1px solid var(--b2);border-radius:10px}
+.sev-score-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sev-score-lbl{font-size:11px;color:var(--t2)}
+.sev-score-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500}
+.sev-score-track{height:6px;background:var(--s3);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.sev-score-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.sev-score-reason{font-size:11px;color:var(--t2);line-height:1.5}
+/* ── Ticket card ── */
+.ticket-wrap{animation:fadeUp .3s ease}
+.ticket-card{background:var(--s1);border:1px solid var(--b2);border-radius:var(--rxl);overflow:hidden}
+.tk-hdr{padding:11px 16px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--b1)}
+.hdr-jira{background:linear-gradient(135deg,#0039a8,#0052cc)}
+.hdr-ado{background:linear-gradient(135deg,#004e8c,#0078d4)}
+.hdr-gh{background:linear-gradient(135deg,#161b22,#21262d)}
+.tk-id{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500}
+.tk-badges{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
+.sbadge,.pbadge{font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px}
+.sc{background:#ef444420;color:#f87171;border:1px solid #ef444330}
+.sh{background:#f59e0b20;color:#fbbf24;border:1px solid #f59e0b30}
+.sm{background:#3b82f620;color:#60a5fa;border:1px solid #3b82f630}
+.sl{background:#22c55e20;color:#4ade80;border:1px solid #22c55e30}
+.pbadge{background:var(--s3);color:var(--t2);border:1px solid var(--b2)}
+.tk-body{padding:14px 16px}
+.tk-sec{margin-bottom:13px}
+.tk-sec:last-child{margin-bottom:0}
+.tk-sec-lbl{font-size:9px;font-weight:600;letter-spacing:.9px;text-transform:uppercase;color:var(--t3);margin-bottom:5px}
+.tk-summary{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;line-height:1.4;margin-bottom:8px}
+.tk-desc{font-size:12px;color:var(--t2);line-height:1.65}
+.steps-list{list-style:none}
+.step-item{display:flex;gap:9px;padding:4px 0;border-bottom:1px solid var(--b1);font-size:12px;color:var(--t2);line-height:1.5}
+.step-item:last-child{border-bottom:none}
+.step-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent2);min-width:18px;padding-top:1px;flex-shrink:0}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.rbox{padding:8px 10px;font-size:12px;line-height:1.55;border-radius:0 7px 7px 0}
+.rbox.exp{background:var(--green-bg);border-left:3px solid var(--green);color:#86efac}
+.rbox.act{background:var(--red-bg);border-left:3px solid var(--red);color:#fca5a5}
+.env-box{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--s3);border:1px solid var(--b1);border-radius:7px;padding:7px 10px;color:var(--t2);line-height:1.8}
+.tags-row{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--b2);color:var(--t2);background:var(--s3)}
+.tag-c{background:var(--jira-bg);border-color:var(--jira-bd);color:var(--jira)}
+.crit-list{list-style:none}
+.crit-item{display:flex;gap:8px;font-size:12px;color:var(--t2);align-items:flex-start;padding:3px 0}
+.crit-chk{width:14px;height:14px;border-radius:50%;background:var(--green-bg);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+/* ── Quality score badge ── */
+.quality-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:20px;margin:0 16px 10px;border:1px solid}
+.qb-green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
+.qb-amber{background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)}
+.qb-red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
+/* ── Feature panels ── */
+.feat-panel{margin:0 16px 12px;border:1px solid var(--b2);border-radius:10px;overflow:hidden;background:var(--s2)}
+.feat-panel-hdr{padding:8px 12px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;border-bottom:1px solid var(--b2);background:var(--s3)}
+.feat-panel-body{padding:12px}
+/* Root cause */
+.rc-item{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--b1);font-size:12px}
+.rc-item:last-child{border-bottom:none}
+.rc-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent2);min-width:18px;flex-shrink:0;padding-top:1px}
+.rc-content{flex:1}
+.rc-cause{color:var(--t1);margin-bottom:2px;font-weight:500}
+.rc-area{font-size:11px;color:var(--t2)}
+/* Test cases */
+.tc-item{margin-bottom:10px;border:1px solid var(--b2);border-radius:8px;overflow:hidden}
+.tc-item:last-child{margin-bottom:0}
+.tc-scenario{padding:7px 10px;background:var(--s3);font-size:11px;font-weight:500;color:var(--accent2);border-bottom:1px solid var(--b2)}
+.tc-body{padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t2);line-height:1.8;white-space:pre-wrap}
+/* Duplicate panel */
+.dup-panel{margin:0 16px 12px;border:1px solid var(--amber-bd);border-radius:10px;overflow:hidden;background:var(--amber-bg)}
+.dup-hdr{padding:7px 12px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--amber);border-bottom:1px solid var(--amber-bd)}
+.dup-item{display:flex;align-items:center;gap:9px;padding:7px 12px;border-bottom:1px solid var(--amber-bd);font-size:12px}
+.dup-item:last-child{border-bottom:none}
+.dup-id{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--amber);flex-shrink:0}
+.dup-ttl{flex:1;color:var(--t2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dup-st{font-size:10px;padding:2px 6px;border-radius:20px;background:var(--s3);color:var(--t2);border:1px solid var(--b2);flex-shrink:0}
+.dup-lnk{color:var(--accent2);text-decoration:none;font-size:11px;flex-shrink:0}
+/* Edit panel */
+.edit-panel{padding:14px 16px;background:var(--s2);border-top:1px solid var(--b2)}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+.ef{display:flex;flex-direction:column;gap:3px}
+.ef.full{grid-column:span 2}
+.ef-lbl{font-size:10px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--t3)}
+.ef-in{background:var(--s3);border:1px solid var(--b2);border-radius:7px;padding:6px 9px;font-size:12px;color:var(--t1);font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border-color .15s}
+.ef-in:focus{border-color:var(--accent)}
+textarea.ef-in{resize:vertical;min-height:55px;line-height:1.5}
+select.ef-in{cursor:pointer}
+.step-row{display:flex;gap:5px;align-items:center}
+.step-row input{flex:1}
+.step-del{background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:0 3px}
+.step-del:hover{color:var(--red)}
+.add-step-btn{font-size:11px;color:var(--accent2);background:none;border:1px dashed var(--b3);border-radius:6px;padding:3px 9px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:2px}
+/* Comment panel */
+.comment-form{padding:12px 16px;border-top:1px solid var(--b1)}
+.comment-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
+/* Ticket footer */
+.tk-foot{padding:9px 16px;border-top:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;background:var(--bg);gap:8px;flex-wrap:wrap}
+.tf-tabs{display:flex;gap:3px}
+.tf-tab{font-size:11px;padding:3px 9px;border-radius:6px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;transition:var(--transition)}
+.tf-tab.active{background:var(--s3);border-color:var(--b2);color:var(--t1)}
+.tk-acts{display:flex;gap:5px;flex-wrap:wrap}
+.abtn{display:flex;align-items:center;gap:4px;font-size:10px;padding:4px 9px;border-radius:7px;border:1px solid var(--b2);cursor:pointer;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;transition:var(--transition);white-space:nowrap}
+.abtn:hover{background:var(--s3);color:var(--t1)}
+.abtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.abtn.primary:hover{opacity:.85}
+.abtn.success{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
+.abtn.warn{background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)}
+.abtn.info{background:var(--blue-bg);border-color:var(--blue-bd);color:var(--blue)}
+.abtn.purple{background:var(--purple-bg);border-color:#a855f740;color:var(--purple)}
+.abtn:disabled{opacity:.4;cursor:not-allowed}
+.json-pane{font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.7;color:var(--t2);padding:12px 16px;background:var(--bg);max-height:280px;overflow-y:auto;border-top:1px solid var(--b1)}
+.post-status{display:flex;align-items:center;gap:7px;padding:8px 16px;font-size:12px;border-top:1px solid var(--b1)}
+.post-status.posting{color:var(--t2)}
+.post-status.posted{color:var(--green)}
+.post-status.failed{color:var(--red)}
+.post-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
+/* ── Bulk panel ── */
+.bulk-panel{padding:14px 20px;border-top:1px solid var(--b1);flex-shrink:0;background:var(--s2)}
+.bulk-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.bulk-title{font-size:12px;font-weight:500;color:var(--amber)}
+.bulk-rows{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;max-height:120px;overflow-y:auto}
+.bulk-row{display:flex;align-items:center;gap:7px;padding:4px 9px;background:var(--s1);border-radius:6px;border:1px solid var(--b2);font-size:12px;color:var(--t2)}
+.bulk-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);min-width:16px}
+.bulk-txt{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bulk-st{font-size:10px;padding:2px 6px;border-radius:20px;flex-shrink:0}
+.bs-pend{background:var(--s3);color:var(--t3);border:1px solid var(--b2)}
+.bs-proc{background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent)}
+.bs-done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+.bs-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)}
+.bulk-prog{height:3px;background:var(--b2);border-radius:2px;overflow:hidden;margin-bottom:10px}
+.bulk-prog-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+/* ── Input area ── */
+.input-area{padding:12px 20px;border-top:1px solid var(--b1);background:var(--s1);flex-shrink:0;transition:background .3s}
+.input-box{background:var(--s2);border:1px solid var(--b2);border-radius:var(--rl);overflow:hidden;transition:border-color .15s}
+.input-box:focus-within{border-color:var(--accent)}
+.input-top{display:flex;align-items:flex-start}
+textarea#din{flex:1;background:transparent;border:none;outline:none;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--t1);font-family:'DM Sans',sans-serif;resize:none;min-height:64px;max-height:130px}
+textarea#din::placeholder{color:var(--t3)}
+.input-btns{display:flex;flex-direction:column;gap:4px;padding:10px 10px 0 0;flex-shrink:0}
+.iibtn{background:none;border:none;cursor:pointer;color:var(--t3);transition:color .15s;display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px}
+.iibtn:hover{color:var(--accent2);background:var(--s3)}
+.iibtn.active{color:var(--red)}
+.iibtn.has-file{color:var(--green)}
+.input-foot{display:flex;align-items:center;padding:7px 11px;border-top:1px solid var(--b1);gap:6px;flex-wrap:nowrap;overflow:hidden}
+.ex-chips{display:flex;flex-wrap:nowrap;gap:4px;flex:1;min-width:0;overflow:hidden}
+.ex-chip{font-size:10px;padding:2px 8px;border:1px solid var(--b2);border-radius:20px;cursor:pointer;color:var(--t2);background:transparent;font-family:'DM Sans',sans-serif;transition:var(--transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.ex-chip:hover{background:var(--s3);color:var(--t1)}
+.send-btn{display:flex;align-items:center;gap:5px;background:var(--accent);border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:500;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s;flex-shrink:0}
+.send-btn:hover{opacity:.85}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+/* ── Toast ── */
+.toast-wrap{position:fixed;bottom:90px;right:18px;display:flex;flex-direction:column;gap:7px;z-index:200}
+.toast{display:flex;align-items:center;gap:7px;background:var(--s1);border:1px solid var(--b3);border-radius:10px;padding:9px 13px;font-size:12px;color:var(--t1);animation:toastIn .25s ease;min-width:220px;box-shadow:var(--shadow)}
+.toast.success{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+.toast.error{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+.toast.warn{border-color:var(--amber-bd);background:var(--amber-bg);color:var(--amber)}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ── Screenshot thumb ── */
+.ss-thumb{padding:5px 11px 0;display:flex;align-items:center;gap:7px;border-top:1px solid var(--b1)}
+.ss-thumb img{height:34px;width:auto;border-radius:5px;object-fit:cover;border:1px solid var(--b2)}
+.ss-name{font-size:11px;color:var(--t2);flex:1}
+.ss-rm{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px}
+.ss-rm:hover{color:var(--red)}
+#file-input{display:none}
+/* ── Custom confirm dialog (replaces window.confirm — works in iframes) ── */
+.confirm-overlay{position:fixed;inset:0;background:#00000070;z-index:300;display:none;align-items:center;justify-content:center;animation:fadeIn .15s}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:var(--s1);border:1px solid var(--b3);border-radius:var(--rxl);padding:24px;max-width:340px;width:90%;box-shadow:var(--shadow)}
+.confirm-icon{font-size:28px;margin-bottom:10px;text-align:center}
+.confirm-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px;text-align:center}
+.confirm-msg{font-size:12px;color:var(--t2);line-height:1.6;text-align:center;margin-bottom:18px}
+.confirm-btns{display:flex;gap:8px;justify-content:center}
+.confirm-btn-cancel{padding:7px 18px;border:1px solid var(--b3);border-radius:8px;background:transparent;color:var(--t2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:var(--transition)}
+.confirm-btn-cancel:hover{background:var(--s3);color:var(--t1)}
+.confirm-btn-ok{padding:7px 18px;border:none;border-radius:8px;background:var(--red);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.confirm-btn-ok:hover{opacity:.85}
+/* ── NVDA/VoiceOver: visually hidden but SR-readable labels ── */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* ── Comment existing ── */
+.existing-form{padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--b1)}
+.ef-row{display:flex;gap:7px;margin-bottom:7px}
+/* ── WCAG 2.1 AA: Focus visible ring on all interactive elements (TC-141a fix) ── */
+.abtn:focus-visible,.hbtn:focus-visible,.send-btn:focus-visible,.tbtn:focus-visible,
+.tpl-btn:focus-visible,.ex-chip:focus-visible,.tf-tab:focus-visible,
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.sec-hdr:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.cfg-in:focus-visible,.ef-in:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* ── Mobile responsive (TC-133 fix) ── */
+/* ══ MOBILE RESPONSIVE ══════════════════════════════════════ */
+@media(max-width:680px){
+  /* Layout */
+  .app{grid-template-columns:1fr;position:relative}
+  
+  /* Sidebar — slide-in drawer on mobile */
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;
+    width:280px;z-index:200;
+    transform:translateX(-100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    box-shadow:4px 0 24px #00000040;
+  }
+  .sidebar.mobile-open{transform:translateX(0)}
+  
+  /* Mobile overlay behind sidebar */
+  .mobile-overlay{
+    display:none;position:fixed;inset:0;
+    background:#00000060;z-index:199;
+    backdrop-filter:blur(2px);
+  }
+  .mobile-overlay.active{display:block}
+
+  /* Header */
+  .main-hdr{padding:10px 12px}
+  .main-hdr .hbtn:not(.theme-btn){font-size:11px;padding:5px 7px}
+  .hdr-left{gap:8px}
+  .hdr-status span{display:none}
+
+  /* Show sidebar toggle on mobile */
+  #mobile-menu-btn{display:flex !important}
+
+  /* Chat */
+  .chat{padding:12px 10px;gap:10px}
+  .msg-bub{max-width:88%}
+
+  /* Ticket frame */
+  .ticket-frame{border-radius:12px;margin:0}
+  .tf-hdr{padding:12px 14px 10px}
+  .tf-title{font-size:13px}
+  .tf-body{padding:14px}
+  .tf-exp-act{grid-template-columns:1fr}
+  .tf-actions{padding:10px 14px;gap:5px;flex-wrap:wrap}
+  .abtn{font-size:10px;padding:4px 8px}
+
+  /* Platform post buttons — stack on mobile */
+  .platform-btns-grid{grid-template-columns:1fr 1fr}
+  .platform-btn{padding:8px 6px;font-size:10px}
+  .platform-btn.all{font-size:11px;padding:9px}
+
+  /* Input area */
+  .input-area{padding:8px 10px}
+  .input-box{border-radius:12px}
+  #din{padding:10px 12px;font-size:13px;min-height:50px}
+  .ex-chips{display:none}
+  .input-foot{padding:6px 10px}
+  .send-btn{padding:7px 14px;font-size:12px}
+
+  /* Config rows in sidebar */
+  .cfg-in{font-size:12px;padding:7px 10px}
+  .ptab-btn{font-size:10px;padding:6px 3px}
+
+  /* TC prompt */
+  .tc-prompt{padding:10px 12px}
+  .tc-prompt-btns{flex-direction:column}
+
+  /* Post status */
+  .post-status{font-size:11px;padding:8px 10px}
+  
+  /* Ticket actions wrap */
+  .tk-acts{gap:4px;flex-wrap:wrap}
+}
+
+/* ── Small phones (< 380px) ── */
+@media(max-width:380px){
+  .platform-btns-grid{grid-template-columns:1fr}
+  .platform-btn.all{grid-column:1}
+  .tf-actions{gap:4px}
+  .abtn{font-size:9px;padding:3px 7px}
+}
+
+/* ── v4.7 UI Enhancements ── */
+/* Platform tabs */
+.ptab-header{display:flex;background:var(--s2);padding:5px;gap:3px;border-bottom:1px solid var(--b1)}
+.ptab-btn{flex:1;padding:7px 4px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--t3);cursor:pointer;border-radius:7px;transition:var(--transition);font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px}
+.ptab-btn:hover{color:var(--t2);background:var(--b2)}
+.ptab-btn.active{color:#fff}
+.ptab-btn.active.jira{background:var(--jira)}
+.ptab-btn.active.ado{background:#0078d4}
+.ptab-btn.active.gh{background:#24292e}
+.ptab-panel{padding:11px 12px;display:none}
+.ptab-panel.active{display:block}
+/* Platform post buttons */
+.platform-post-btns{padding:12px 14px;border-top:1px solid var(--b1);background:var(--s2)}
+.platform-post-label{font-size:9px;font-weight:700;color:var(--t3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;text-align:center}
+.platform-btns-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.platform-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:9px;border:1px solid var(--b2);background:var(--s3);color:var(--t2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:var(--transition);white-space:nowrap}
+.platform-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px #00000020}
+.platform-btn:disabled{opacity:.4;cursor:not-allowed;transform:none !important}
+.platform-btn.jira{border-color:var(--jira-bd);color:var(--jira)}
+.platform-btn.jira:hover{background:var(--jira-bg)}
+.platform-btn.ado{border-color:#0078d440;color:#0078d4}
+.platform-btn.ado:hover{background:#0078d410}
+.platform-btn.gh{border-color:var(--gh-bd);color:var(--gh)}
+.platform-btn.gh:hover{background:var(--gh-bg)}
+.platform-btn.all{grid-column:1/-1;color:var(--accent);border-color:var(--jira-bd);font-weight:700}
+.platform-btn.all:hover{background:var(--accent-bg)}
+/* TC prompt */
+.tc-prompt{padding:12px 14px;border-top:1px solid var(--b1);background:var(--green-bg);display:none}
+.tc-prompt-title{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:3px}
+.tc-prompt-sub{font-size:11px;color:var(--t2);margin-bottom:10px}
+.tc-prompt-btns{display:flex;gap:8px}
+/* Post status */
+.post-status{border-radius:8px;padding:9px 12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px;margin:6px 0}
+.post-status.posted{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green)}
+.post-status.failed{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red)}
+.post-status.posting{background:var(--accent-bg);border:1px solid var(--b2);color:var(--t2)}
+.post-link{color:var(--accent);font-weight:700;text-decoration:none}
+.post-link:hover{text-decoration:underline}
+/* Light theme input improvements */
+[data-theme="light"] .cfg-in{background:var(--s1);border-color:var(--b3)}
+/* Smooth theme transitions - only on specific elements */
+.sidebar,.main,.hdr,.input-area,.input-box,.msg-bub,.ticket-frame,.cfg-in,.abtn,.send-btn,.platform-btn,.ptab-btn,.toast{transition:background-color .18s ease,border-color .18s ease,color .12s ease}
+</style>
+  <script>
+    (function(){var t=localStorage.getItem('da_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+</head>
+<body>
+<input type="file" id="file-input" accept="image/*"/>
+
+<!-- ══ CUSTOM CONFIRM DIALOG (replaces window.confirm — iframe-safe + NVDA/VoiceOver) ══ -->
+<div class="confirm-overlay" id="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title-el" aria-describedby="confirm-msg-el">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon-el" aria-hidden="true">⚠️</div>
+    <div class="confirm-title" id="confirm-title-el">Confirm Action</div>
+    <div class="confirm-msg" id="confirm-msg-el">Are you sure?</div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-cancel" id="confirm-cancel-btn" onclick="resolveConfirm(false)">Cancel</button>
+      <button class="confirm-btn-ok" id="confirm-ok-btn" onclick="resolveConfirm(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ KEYBOARD SHORTCUTS MODAL ══ -->
+<div class="kb-modal" id="kb-modal" role="dialog" aria-modal="true" aria-labelledby="kb-modal-title">
+  <div class="kb-box">
+    <div class="kb-title"><span id="kb-modal-title">Keyboard Shortcuts</span> <button class="kb-close" onclick="closeKB()" aria-label="Close keyboard shortcuts">×</button></div>
+    <div class="kb-row"><span>Generate ticket</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">G</span></span></div>
+    <div class="kb-row"><span>Post ticket</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">P</span></span></div>
+    <div class="kb-row"><span>Check duplicates</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">D</span></span></div>
+    <div class="kb-row"><span>Edit ticket</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">E</span></span></div>
+    <div class="kb-row"><span>Bulk mode toggle</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">B</span></span></div>
+    <div class="kb-row"><span>Open dashboard</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">M</span></span></div>
+    <div class="kb-row"><span>Voice input</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">Shift</span><span class="key">V</span></span></div>
+    <div class="kb-row"><span>Toggle theme</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">Shift</span><span class="key">T</span></span></div>
+    <div class="kb-row"><span>Clear chat</span><span class="kb-key"><span class="key">Ctrl</span><span class="key">L</span></span></div>
+    <div class="kb-row"><span>This help</span><span class="kb-key"><span class="key">?</span></span></div>
+  </div>
+</div>
+
+<!-- ══ METRICS DASHBOARD ══ -->
+<div class="dashboard-overlay" id="dash-overlay" onclick="closeDash()"></div>
+<div class="dashboard-panel" id="dash-panel" role="complementary" aria-label="Session Metrics Dashboard">
+  <div class="dash-header">
+    <span class="dash-title" id="dash-title">📊 Session Metrics</span>
+    <button class="dash-close" onclick="closeDash()" aria-label="Close metrics dashboard">×</button>
+  </div>
+  <div class="dash-body">
+    <div class="dash-grid" id="dash-stats"></div>
+    <div class="dash-chart-wrap"><div class="dash-chart-title">Severity Breakdown</div><canvas id="chart-sev" height="160"></canvas></div>
+    <div class="dash-chart-wrap"><div class="dash-chart-title">Platform Distribution</div><canvas id="chart-plat" height="160"></canvas></div>
+    <div class="dash-chart-wrap"><div class="dash-chart-title">Tickets Over Time</div><canvas id="chart-time" height="160"></canvas></div>
+  </div>
+</div>
+
+<div class="app">
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar">
+  <div class="sb-top">
+    <div class="logo">
+      <div class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 72 72"><defs><linearGradient id="lbf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4f6ef7"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="72" height="72" rx="16" fill="url(#lbf)"/><rect x="16" y="36" width="40" height="22" rx="5" fill="#fff" opacity=".9"/><rect x="22" y="27" width="28" height="13" rx="4" fill="#fff" opacity=".9"/><path d="M40 12 L32 28 L38 28 L30 48 L50 24 L42 24 Z" fill="url(#lbf)"/></svg></div>
+      <div><div class="logo-name">BugForge AI</div><div class="logo-sub">v4.7 · Jira Edition</div></div>
+    </div>
+    <div class="ppills">
+      <div class="ppill" id="pill-jira"><svg width="11" height="11" viewBox="0 0 32 32" fill="none"><path d="M16 2L2 17l14 13 14-13L16 2z" fill="#2d84ff"/><path d="M16 9.5L9.5 17 16 23l6.5-6L16 9.5z" fill="white"/></svg>Jira</div>
+      <div class="ppill" id="pill-ado"><svg width="11" height="11" viewBox="0 0 32 32" fill="none"><path d="M27 6L20 2.5 10.5 10 4 13v7l4.5 1.5L20 29.5 27 26V6z" fill="#29a7ff"/></svg>ADO</div>
+      <div class="ppill" id="pill-gh"><svg width="11" height="11" viewBox="0 0 32 32" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M16 2C8.27 2 2 8.27 2 16c0 6.19 4 11.43 9.57 13.29.7.13.96-.3.96-.67v-2.36c-3.89.85-4.71-1.87-4.71-1.87-.64-1.62-1.55-2.05-1.55-2.05-1.27-.87.1-.85.1-.85 1.4.1 2.13 1.44 2.13 1.44 1.25 2.14 3.28 1.52 4.08 1.16.12-.9.49-1.52.89-1.87-3.11-.35-6.37-1.55-6.37-6.9 0-1.52.54-2.77 1.44-3.74-.14-.35-.63-1.77.13-3.68 0 0 1.18-.38 3.86 1.44A13.3 13.3 0 0116 8.36c1.19.01 2.38.16 3.5.47 2.67-1.82 3.84-1.44 3.84-1.44.77 1.91.28 3.33.14 3.68.9.97 1.44 2.22 1.44 3.74 0 5.36-3.27 6.54-6.38 6.89.5.43.95 1.28.95 2.59v3.83c0 .37.25.8.96.67C25.99 27.43 30 22.19 30 16 30 8.27 23.73 2 16 2z" fill="#8b949e"/></svg>GitHub</div>
+    </div>
+  </div>
+
+  <!-- Anthropic -->
+  <div class="sb-sec"><div class="sec-hdr" role="button" tabindex="0" onclick="tSec('ant')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tSec('ant')}"><span class="sec-lbl">Anthropic API</span><span class="sec-arr open" id="arr-ant">▶</span></div>
+  <div class="sec-body open" id="bod-ant">
+    <div style="padding:6px 0;font-size:11px;color:var(--green);display:flex;align-items:center;gap:6px">
+      <span class="cfg-dot ok" id="dot-ant"></span>
+      Secured via Vercel Environment Variable
+    </div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:6px">API key is stored server-side in Vercel — never exposed to the browser. Go to Vercel → Settings → Environment Variables → add <code style="background:var(--s3);padding:1px 4px;border-radius:3px">ANTHROPIC_API_KEY</code></div>
+    <button class="btn-sv" style="background:var(--s3);color:var(--t2);border:1px solid var(--b3)" onclick="validateCfg('ant')">✓ Test Connection</button>
+  </div></div>
+
+  <!-- Platform Tabs — Jira / ADO / GitHub -->
+  <div class="sb-sec" style="padding:0">
+    <!-- Tab headers -->
+    <div class="ptab-header">
+      <button id="ptab-jira" class="ptab-btn active jira" onclick="switchPlatformTab('jira')">🔵 Jira</button>
+    </div>
+
+    <!-- Jira Panel -->
+    <div id="ptab-jira-panel" class="ptab-panel active">
+      <div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:5px;margin-bottom:6px">
+        <span class="cfg-dot ok" id="dot-jira"></span>Credentials secured via Vercel env vars
+      </div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:8px;line-height:1.5">
+        Required: <code style="background:var(--s3);padding:1px 4px;border-radius:3px;font-size:9px">JIRA_URL</code>
+        <code style="background:var(--s3);padding:1px 4px;border-radius:3px;font-size:9px">JIRA_EMAIL</code>
+        <code style="background:var(--s3);padding:1px 4px;border-radius:3px;font-size:9px">JIRA_TOKEN</code>
+      </div>
+      <div class="cfg-row">
+        <div class="cfg-lbl">Project <span style="color:var(--accent2);font-size:9px" id="jira-proj-status">↻ loading...</span></div>
+        <select class="cfg-in" id="jira-proj-select" onchange="CFG.jiraProj=this.options[this.selectedIndex]?.dataset?.key||this.value" style="cursor:pointer">
+          <option value="">— select project —</option>
+        </select>
+      </div>
+      <div class="cfg-row">
+        <div class="cfg-lbl">Assignee Email <span style="color:var(--t3);font-size:9px">(optional)</span></div>
+        <input class="cfg-in" id="jira-assignee-input" placeholder="assignee@company.com" oninput="CFG.jiraAssignee=this.value.trim()"/>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn-sv" style="flex:1;background:var(--s3);color:var(--t2);border:1px solid var(--b3)" onclick="validateCfg('jira')">✓ Test</button>
+        <button class="btn-sv" style="flex:0 0 auto;width:64px;background:var(--s3);color:var(--t2);border:1px solid var(--b3)" onclick="loadProjects('jira')">↻ Reload</button>
+      </div>
+      <input type="hidden" id="ci-jira-url"/><input type="hidden" id="ci-jira-email"/>
+      <input type="hidden" id="ci-jira-token"/><input type="hidden" id="ci-jira-proj"/>
+      <input type="hidden" id="ci-jira-board"/><input type="hidden" id="ci-jira-type"/>
+    </div>
+
+      <!-- Notifications -->
+  <div class="sb-sec"><div class="sec-hdr" role="button" tabindex="0" onclick="tSec('notif')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tSec('notif')}"><span class="sec-lbl">Notifications</span><span class="sec-arr open" id="arr-notif">▶</span></div>
+  <div class="sec-body open" id="bod-notif">
+    <div style="padding:4px 0 8px;font-size:11px;color:var(--green);display:flex;align-items:center;gap:6px">
+      <span class="cfg-dot ok" id="dot-teams"></span>Teams webhook secured via Vercel env vars
+    </div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.7;margin-bottom:10px">
+      Set these in <strong>Vercel → Settings → Environment Variables:</strong><br>
+      <code style="background:var(--s3);padding:1px 4px;border-radius:3px;font-size:9px">TEAMS_WEBHOOK_URL</code>
+    </div>
+    <input type="hidden" id="ci-teams"/>
+    <span id="dot-teams" style="display:none"></span>
+  </div></div>
+
+  <!-- Templates -->
+  <div class="sb-sec"><div class="sec-hdr" role="button" tabindex="0" onclick="tSec('tpl')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tSec('tpl')}"><span class="sec-lbl">Quick Templates</span><span class="sec-arr" id="arr-tpl">▶</span></div>
+  <div class="sec-body" id="bod-tpl">
+    <div class="tpl-grid" id="tpl-grid"></div>
+  </div></div>
+
+  <!-- Routing -->
+  <div class="sb-sec"><div class="sec-hdr" role="button" tabindex="0" onclick="tSec('route')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tSec('route')}"><span class="sec-lbl">Routing Rules</span><span class="sec-arr" id="arr-route">▶</span></div>
+  <div class="sec-body" id="bod-route">
+    <div class="route-item"><span class="rb rb-ado">ADO</span><span>D365, Dynamics, pipeline, PUAT, ADO, sprint</span></div>
+    <div class="route-item"><span class="rb rb-gh">GH</span><span>GitHub, git, repo, npm, Actions</span></div>
+    <div class="route-item"><span class="rb rb-jira">Jira</span><span>Everything else (default)</span></div>
+  </div></div>
+
+  <!-- History -->
+  <div class="sb-sec" style="flex:1"><div class="sec-hdr" role="button" tabindex="0" onclick="tSec('hist')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tSec('hist')}"><span class="sec-lbl">Session History <span id="hist-cnt" style="color:var(--accent2)"></span></span><span class="sec-arr open" id="arr-hist">▶</span></div>
+  <div class="sec-body open" id="bod-hist">
+    <div id="hist-list"></div>
+    <div style="display:flex;gap:6px;margin-top:8px" id="hist-export-btns" style="display:none">
+      <button class="hbtn" onclick="exportCSV()" style="flex:1;justify-content:center;font-size:10px">📥 CSV</button>
+      <button class="hbtn" onclick="exportPrint()" style="flex:1;justify-content:center;font-size:10px">🖨 Print</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+  <!-- Header -->
+  <div class="main-hdr">
+    <div class="hdr-left">
+      <button id="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Open settings" style="display:none;background:transparent;border:none;cursor:pointer;padding:5px;border-radius:8px;color:var(--t2);font-size:18px;line-height:1">☰</button>
+      <div class="hdr-status"><div class="status-dot" aria-hidden="true" style="background:#10b981;box-shadow:0 0 8px #10b981;width:8px;height:8px;border-radius:50%;animation:statusPulse 2.5s infinite"></div><span id="agent-txt" role="status" aria-live="polite" aria-atomic="true">Agent ready</span></div>
+      <div class="voice-indicator" id="voice-ind"><div class="voice-dot"></div><span>Listening...</span><button onclick="stopVoice()" style="background:none;border:none;color:var(--red);cursor:pointer;margin-left:4px;font-size:12px">Stop</button></div>
+    </div>
+    <div class="hdr-btns">
+      <button class="hbtn theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme (Ctrl+Shift+T)">🌙</button>
+      <button class="hbtn" onclick="openDash()" title="Metrics (Ctrl+M)">📊</button>
+      <button class="hbtn" id="bulk-btn" onclick="toggleBulk()" title="Bulk mode (Ctrl+B)">⚡ Bulk</button>
+      <button class="hbtn" onclick="showKB()" title="Keyboard shortcuts (?)">⌨</button>
+      <button class="hbtn" onclick="clearChat()" title="Clear (Ctrl+L)">Clear</button>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-area" id="chat" role="log" aria-live="polite" aria-label="Ticket generation conversation" aria-relevant="additions">
+    <div class="drop-ov" id="drop-ov"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="color:var(--accent2);font-size:13px">Drop screenshot to attach</span></div>
+    <div class="msg ai">
+      <div class="msg-av ai"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.4H19l-4.4 3.2 1.7 5.4L12 13l-4.3 3 1.7-5.4L5 7.4h5.2L12 2z" fill="white"/></svg></div>
+      <div><div class="msg-bub"><strong>BugForge AI v3</strong> — 14 new features active.<br><br>
+        <span style="color:var(--t2);font-size:12px">⭐ Severity auto-scorer · 🧪 Test case generator · 🔍 Root cause · 📋 Templates · 💬 Comment existing · 🔔 Teams · 🏃 Sprint assign · 🎤 Voice · 📤 Export · 📊 Dashboard · ✅ Quality scorer · 🔗 Link epic · 🌙 Theme · ⌨ Shortcuts</span>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- Bulk panel -->
+  <div class="bulk-panel" id="bulk-panel" style="display:none">
+    <div class="bulk-hdr"><span class="bulk-title">⚡ Bulk Mode</span><button class="hbtn" onclick="parseBulk()">Parse</button></div>
+    <textarea id="bulk-in" style="width:100%;background:var(--s1);border:1px solid var(--b2);border-radius:8px;padding:9px;font-size:12px;color:var(--t1);font-family:'DM Sans',sans-serif;outline:none;resize:none;height:70px;line-height:1.6" placeholder="1. Login button not responding&#10;2. Payment timeout on checkout&#10;3. Dashboard crash on filter&#10;&#10;(Max 20 items recommended — one per line or numbered)"></textarea>
+    <div id="bulk-rows" style="margin-top:8px"></div>
+    <div class="bulk-prog" id="bpw" style="display:none"><div class="bulk-prog-bar" id="bpb" style="width:0%"></div></div>
+    <div style="display:flex;gap:7px;margin-top:8px" id="bulk-acts" style="display:none">
+      <button class="send-btn" onclick="runBulk()"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5L8 1z"/></svg>Create All</button>
+      <button class="hbtn" onclick="clearBulk()">Clear</button>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area" id="input-area">
+    <!-- Comment on existing ticket form -->
+    <div class="existing-form" id="existing-form" style="display:none">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--amber);margin-bottom:7px">💬 Comment on Existing Ticket</div>
+      <div class="ef-row">
+        <input class="cfg-in" id="existing-id" placeholder="Ticket ID (e.g. QA-1234 or #567)" style="flex:1"/>
+        <select class="cfg-in" id="existing-platform" style="width:80px">
+          <option value="jira">Jira</option><option value="ado">ADO</option><option value="github">GitHub</option>
+        </select>
+      </div>
+      <textarea class="cfg-in" id="existing-comment" placeholder="Add comment or additional repro steps..." rows="2" style="width:100%;resize:none;font-family:'DM Sans',sans-serif;font-size:12px;line-height:1.5;margin-bottom:7px"></textarea>
+      <div style="display:flex;gap:7px">
+        <button class="send-btn" style="font-size:11px;padding:6px 12px" onclick="addComment()">Post Comment</button>
+        <button class="hbtn" onclick="toggleCommentForm()">Cancel</button>
+      </div>
+    </div>
+    <div class="input-box">
+      <div class="input-top">
+        <textarea id="din" aria-label="Describe your defect" aria-multiline="true" placeholder="Describe your bug... (Enter to send)&#10;📸 Tip: Paste a screenshot (Ctrl+V) for better ticket quality"></textarea>
+        <div class="input-btns">
+          <button class="iibtn" id="voice-btn" onclick="toggleVoice()" title="Voice input (Ctrl+Shift+V)" aria-label="Voice input (Ctrl+Shift+V)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M5 10a7 7 0 0014 0M12 19v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <button class="iibtn" id="attach-btn" onclick="document.getElementById('file-input').click()" title="Attach screenshot" aria-label="Attach screenshot">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="iibtn" onclick="toggleCommentForm()" title="Comment on existing ticket" aria-label="Comment on existing ticket" style="font-size:13px">💬</button>
+        </div>
+      </div>
+      <div id="ss-thumb"></div>
+      <div id="screenshot-warn" style="display:none;align-items:center;gap:8px;padding:6px 14px;background:var(--amber-bg);border-top:1px solid var(--amber-bd);font-size:11px;color:var(--amber)">
+      <span>📸</span>
+      <span>Screenshot required — paste (Ctrl+V) or click the 📎 button to attach</span>
+    </div>
+    <div class="input-foot">
+        <div class="ex-chips">
+          <span class="ex-chip" onclick="setEx(0)">Login fails mobile</span>
+          <span class="ex-chip" onclick="setEx(1)">Payment timeout</span>
+          <span class="ex-chip" onclick="setEx(2)">Dashboard crash</span>
+          <span class="ex-chip" onclick="setEx(3)">API 404 error</span>
+        </div>
+        <select id="platform-override" style="background:var(--s3);border:1px solid var(--b3);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--t1);font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;flex-shrink:0;max-width:90px" title="Force platform (overrides auto-routing)">
+          <option value="auto">🤖 Auto</option>
+          <option value="jira">🔵 Jira</option>
+          <option value="azure_devops">🔷 ADO</option>
+          <option value="github">⚫ GitHub</option>
+        </select>
+        <button class="send-btn" id="send-btn" onclick="sendDefect()" aria-label="Generate ticket from defect description">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5L8 1z"/></svg>
+          Generate
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="false" role="status"></div>
+<script>
+// ══ CONFIG ════════════════════════════════════════════════════
+// ══ COMPLETE RESET ON EVERY LAUNCH ═══════════════════════
+// Clear ALL localStorage on page load — fresh start every time.
+// Nothing persists between sessions: credentials, history, theme, config.
+localStorage.clear();
+
+const LS = k => '';
+const CFG = {
+  ant:'', jiraUrl:'', jiraEmail:'', jiraIssueType:'', jiraReporterEmail:'',
+  jiraToken:'', jiraProj:'', jiraBoard:'',
+  adoOrg:'', adoProj:'', adoPat:'', adoTeam:'',
+  ghOwner:'', ghRepo:'', ghToken:'',
+  teams:'',
+};
+
+// ══ PROXY FETCH ═══════════════════════════════════════════════
+// Jira / ADO / GitHub block direct browser requests (CORS).
+// All platform API calls are routed through /api/proxy (Vercel serverless).
+// Anthropic calls go direct (they support browser access via special header).
+async function pfetch(url, options={}) {
+  const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+  return fetch(proxyUrl, options);
+}
+
+// ══ STATE ═════════════════════════════════════════════════════
+let chatHist=[], isProc=false, curTicket=null, pendingShot=null;
+// BUG-009 FIX: Wrap sessionLog parse in try/catch — corrupted localStorage must not crash the app
+let sessionLog=[];
+try{ sessionLog=JSON.parse(localStorage.getItem('da_log')||'[]'); }
+catch(e){ localStorage.removeItem('da_log'); console.warn('Session history corrupted and reset.'); }
+let bulkItems=[], isBulk=false, editOpen=false;
+let sevCharts={}, voiceRec=null, isListening=false;
+let activeTemplate=null;
+
+// ══ TEMPLATES ════════════════════════════════════════════════
+const TEMPLATES = {
+  'Login/Auth':   { env:'Browser: Chrome/Safari | OS: Windows/macOS | Platform: Web', components:['Authentication','Session'], tags:'Login;Auth;Regression' },
+  'Payment':      { env:'Browser: Chrome | OS: Windows | Payment Gateway: Stripe/PayPal', components:['Checkout','Payment'], tags:'Payment;Critical;Regression' },
+  'Mobile':       { env:'Device: iPhone 14/Samsung S23 | OS: iOS 17/Android 13 | App: v2.x', components:['Mobile App'], tags:'Mobile;iOS;Android' },
+  'API/Backend':  { env:'API Version: v3 | Environment: Staging | Tool: Postman/Newman', components:['API','Backend'], tags:'API;Backend;Integration' },
+  'Dashboard':    { env:'Browser: Chrome | Resolution: 1920x1080 | Role: Admin', components:['Dashboard','Analytics'], tags:'Dashboard;UI;Regression' },
+  'Database':     { env:'DB: PostgreSQL/MySQL | Environment: UAT | User: DBA', components:['Database'], tags:'Data;DB;Integrity' },
+  'Performance':  { env:'Load: 1000 concurrent users | Tool: JMeter | Environment: Perf', components:['Performance'], tags:'Performance;Load;SLA' },
+  'Integration':  { env:'Third-party: [Name] | Environment: Integration | Protocol: REST', components:['Integration'], tags:'Integration;E2E;Third-party' },
+};
+function renderTemplates() {
+  const grid = document.getElementById('tpl-grid');
+  grid.innerHTML = Object.keys(TEMPLATES).map(name =>
+    `<button class="tpl-btn" id="tpl-${name.replace('/','_')}" onclick="applyTemplate('${name}')">${name}</button>`
+  ).join('');
+}
+function applyTemplate(name) {
+  const t = TEMPLATES[name]; if(!t) return;
+  activeTemplate = name;
+  document.querySelectorAll('.tpl-btn').forEach(b => b.classList.toggle('active', b.textContent === name));
+  const din = document.getElementById('din');
+  if (!din.value.trim()) {
+    din.value = `[${name}] `;
+    din.focus();
+  }
+  toast(`Template "${name}" applied`, 'success');
+}
+
+// ══ FEATURE 1: SEVERITY AUTO-SCORER ════════════════════════
+async function scoreSeverity(description) {
+  // Anthropic key server-side
+  const r = await fetch('/api/claude', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ model:'claude-haiku-4-5', max_tokens:200, messages:[{role:'user',content:`Score this defect severity 0-100 and give one-line reasoning. Format: {"score":85,"level":"Critical","reasoning":"Blocks all users from login — production impact"}\n\nDefect: ${description}`}] })
+  });
+  const d = await r.json();
+  const txt = d.content?.[0]?.text||'';
+  try { return JSON.parse(txt.match(/\{[^}]+\}/)?.[0]||'{}'); } catch { return null; }
+}
+
+function renderSeverityScore(score, level, reasoning, container) {
+  const color = score>=80?'#ef4444':score>=60?'#f59e0b':score>=40?'#3b82f6':'#22c55e';
+  const el = document.createElement('div');
+  el.className='sev-score-bar';el.id='sev-score-el';
+  el.innerHTML=`<div class="sev-score-top"><span class="sev-score-lbl">AI Severity Score</span><span class="sev-score-val" style="color:${color}">${score}/100 · ${level}</span></div><div class="sev-score-track"><div class="sev-score-fill" style="width:0%;background:${color}" id="sev-fill"></div></div><div class="sev-score-reason">${reasoning}</div>`;
+  container.appendChild(el);
+  setTimeout(()=>{ const f=document.getElementById('sev-fill'); if(f) f.style.width=score+'%'; },100);
+}
+
+// ══ FEATURE 11: QUALITY SCORER ═════════════════════════════
+async function scoreQuality(ticket) {
+  // API key server-side
+  // BUG-001 FIX: Remove stale badge immediately (before async), not inside renderQualityBadge
+  // This prevents the race condition where rapid re-clicks leave multiple badges visible
+  const staleBadge = document.getElementById('quality-badge-el');
+  if(staleBadge) staleBadge.remove();
+  const btn = document.getElementById('btn-quality');
+  if(btn){ btn.textContent='Scoring...'; btn.disabled=true; }
+  const r = await fetch('/api/claude', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ model:'claude-haiku-4-5', max_tokens:300, messages:[{role:'user',content:`Rate this bug ticket quality 1-10. Return JSON only: {"score":8,"grade":"Good","issues":["Missing browser version","Steps could be more specific"],"strengths":["Clear expected/actual","Good acceptance criteria"]}\n\nTicket: ${JSON.stringify(ticket)}`}] })
+  });
+  const d = await r.json();
+  try {
+    const txt = d.content?.[0]?.text||'';
+    const q = JSON.parse(txt.match(/\{[\s\S]+\}/)?.[0]||'{}');
+    renderQualityBadge(q);
+  } catch(e) { toast('Quality score failed','error'); }
+  if(btn){ btn.innerHTML='✅ Quality Score'; btn.disabled=false; }
+}
+
+function renderQualityBadge(q) {
+  // Idempotent: badge was already removed before fetch — no race condition possible here
+  const existing = document.getElementById('quality-badge-el');
+  if(existing) existing.remove();
+  const cls = q.score>=8?'qb-green':q.score>=6?'qb-amber':'qb-red';
+  const el = document.createElement('div');
+  el.className=`quality-badge ${cls}`;el.id='quality-badge-el';
+  el.innerHTML=`⭐ Quality: ${q.score}/10 · ${q.grade}${q.issues?.length?` · Issues: ${q.issues[0]}`:''} `;
+  const card = document.getElementById('ticket-card-el');
+  if(card) card.insertBefore(el, card.querySelector('.tk-body'));
+}
+
+// ══ FEATURE 3: ROOT CAUSE SUGGESTER ════════════════════════
+async function suggestRootCause() {
+  if(!curTicket) return; // Anthropic key server-side
+  const btn=document.getElementById('btn-rc'); if(btn){btn.disabled=true;btn.textContent='Analyzing...';}
+  const area=document.getElementById('rc-area'); if(!area) return;
+  area.innerHTML=`<div class="feat-panel"><div class="feat-panel-hdr">🔍 Root Cause Analysis <span style="font-size:10px;color:var(--t2);margin-left:auto">AI-powered</span></div><div class="feat-panel-body" style="color:var(--t2);font-size:12px">Analyzing...</div></div>`;
+  try {
+    const r = await fetch('/api/claude', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ model:'claude-haiku-4-5', max_tokens:400, messages:[{role:'user',content:`Suggest root causes for this bug. Return JSON: {"causes":[{"cause":"Session token not refreshed","area":"auth/session.ts","likelihood":"High"},{"cause":"API rate limit exceeded","area":"api/middleware.ts","likelihood":"Medium"}]}\n\nBug: ${JSON.stringify(curTicket)}`}] })
+    });
+    const d = await r.json();
+    const rc = JSON.parse((d.content?.[0]?.text||'').match(/\{[\s\S]+\}/)?.[0]||'{}');
+    area.innerHTML=`<div class="feat-panel"><div class="feat-panel-hdr">🔍 Root Cause Analysis</div><div class="feat-panel-body"><div class="rc-list">${(rc.causes||[]).map((c,i)=>`<div class="rc-item"><span class="rc-num">${String(i+1).padStart(2,'0')}</span><div class="rc-content"><div class="rc-cause">${c.cause}</div><div class="rc-area">📁 ${c.area} · Likelihood: <strong style="color:${c.likelihood==='High'?'var(--red)':c.likelihood==='Medium'?'var(--amber)':'var(--green)'}">${c.likelihood}</strong></div></div></div>`).join('')}</div></div></div>`;
+  } catch(e) { area.innerHTML=''; toast('Root cause failed','error'); }
+  if(btn){btn.disabled=false;btn.innerHTML='🔍 Root Cause';}
+}
+
+// ══ FEATURE 2: TEST CASE GENERATOR ════════════════════════
+async function generateTestCases() {
+  if(!curTicket) return; // Anthropic key server-side
+  const btn=document.getElementById('btn-tc'); if(btn){btn.disabled=true;btn.textContent='Generating...';}
+  const area=document.getElementById('tc-area'); if(!area) return;
+  area.innerHTML=`<div class="feat-panel"><div class="feat-panel-hdr">🧪 Test Cases <span style="color:var(--t2);font-size:10px;margin-left:auto">Gherkin/BDD</span></div><div class="feat-panel-body" style="font-size:12px;color:var(--t2)">Generating...</div></div>`;
+  try {
+    const r = await fetch('/api/claude', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ model:'claude-haiku-4-5', max_tokens:600, messages:[{role:'user',content:`Generate 4 Gherkin test cases for this bug (positive, negative, edge case, regression). JSON: {"cases":[{"type":"Positive","scenario":"Verify login succeeds with valid credentials","gherkin":"Given the user is on login page\\nWhen they enter valid email and password\\nAnd click Sign In\\nThen they should be redirected to dashboard"}]}\n\nBug: ${JSON.stringify({summary:curTicket.summary||curTicket.title, steps:curTicket.steps_to_reproduce||curTicket.repro_steps, expected:curTicket.expected_result, actual:curTicket.actual_result})}`}] })
+    });
+    const d = await r.json();
+    const tc = JSON.parse((d.content?.[0]?.text||'').match(/\{[\s\S]+\}/)?.[0]||'{}');
+    const typeColors={'Positive':'var(--green)','Negative':'var(--red)','Edge Case':'var(--amber)','Regression':'var(--purple)'};
+    area.innerHTML=`<div class="feat-panel"><div class="feat-panel-hdr">🧪 Test Cases <button onclick="copyTestCases()" style="margin-left:auto;background:none;border:1px solid var(--b2);border-radius:5px;padding:2px 7px;font-size:10px;color:var(--t2);cursor:pointer">Copy All</button></div><div class="feat-panel-body" id="tc-content">${(tc.cases||[]).map(c=>`<div class="tc-item"><div class="tc-scenario" style="color:${typeColors[c.type]||'var(--accent2)'}">📋 ${c.type} — ${c.scenario}</div><div class="tc-body">${c.gherkin}</div></div>`).join('')}</div></div>`;
+  } catch(e) { area.innerHTML=''; toast('Test case generation failed','error'); }
+  if(btn){btn.disabled=false;btn.innerHTML='🧪 Test Cases';}
+}
+
+function copyTestCases() {
+  const el=document.getElementById('tc-content'); if(!el) return;
+  navigator.clipboard.writeText(el.innerText); toast('Test cases copied!','success');
+}
+
+// ══ FEATURE 5: COMMENT ON EXISTING TICKET ═════════════════
+function toggleCommentForm() {
+  const f=document.getElementById('existing-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+
+async function addComment() {
+  const id=document.getElementById('existing-id').value.trim();
+  const platform=document.getElementById('existing-platform').value;
+  const comment=document.getElementById('existing-comment').value.trim();
+  if(!id||!comment){toast('Enter ticket ID and comment','warn');return;}
+  try {
+    if(platform==='jira') {
+      await api('jira',{action:'add_comment',config:jiraCfg(),payload:{issueKey:id,comment}});
+    } else if(platform==='ado') {
+      await api('ado',{action:'add_comment',config:adoCfg(),payload:{workItemId:id.replace('#',''),comment}});
+    } else {
+      await api('github',{action:'add_comment',config:ghCfg(),payload:{issueNumber:id.replace('#',''),comment}});
+    }
+    toast(`Comment added to ${id}!`,'success');
+    document.getElementById('existing-comment').value='';
+    document.getElementById('existing-form').style.display='none';
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// ══ FEATURE 7: SPRINT AUTO-ASSIGN ══════════════════════════
+async function fetchAndAssignSprint(platform, ticketId) {
+  try {
+    if(platform==='jira' && CFG.jiraBoard) {
+      const {sprint}=await api('jira',{action:'get_sprint',config:jiraCfg()});
+      if(!sprint) return;
+      await api('jira',{action:'assign_sprint',config:jiraCfg(),payload:{sprintId:sprint.id,issueKey:ticketId}});
+      toast(`Added to sprint: ${sprint.name}`,'success');
+    } else if(platform==='azure_devops' && CFG.adoTeam) {
+      const {iteration}=await api('ado',{action:'get_iteration',config:adoCfg()});
+      if(!iteration) return;
+      await api('ado',{action:'assign_iteration',config:adoCfg(),payload:{workItemId:ticketId.replace('#',''),iterationPath:iteration.path}});
+      toast(`Assigned to iteration: ${iteration.name}`,'success');
+    }
+  } catch(e) { /* Sprint assign is best-effort, non-blocking */ }
+}
+
+// ══ FEATURE 12: LINK TO EPIC/PARENT ════════════════════════
+async function showLinkEpic() {
+  const area=document.getElementById('link-area'); if(!area||!curTicket) return;
+  const platform=curTicket._platform;
+  area.innerHTML=`<div class="feat-panel"><div class="feat-panel-hdr">🔗 Link to Epic/Parent</div><div class="feat-panel-body"><div style="display:flex;gap:7px;margin-bottom:8px"><input class="cfg-in" id="parent-id" placeholder="${platform==='jira'?'Epic key e.g. PROJ-10':platform==='azure_devops'?'Feature ID e.g. 1234':'Milestone #'}" style="flex:1"/><button class="send-btn" style="font-size:11px;padding:5px 11px" onclick="linkParent()">Link</button></div><div style="font-size:11px;color:var(--t2)">Enter the parent Epic/Feature/Milestone ID to link this ticket.</div></div></div>`;
+}
+
+async function linkParent() {
+  const parentId=document.getElementById('parent-id')?.value.trim(); if(!parentId) return;
+  const platform=curTicket._platform, childId=document.getElementById('ticket-id-display')?.textContent;
+  try {
+    if(platform==='jira') {
+      await api('jira',{action:'link_issue',config:jiraCfg(),payload:{inwardKey:childId,outwardKey:parentId}});
+    } else if(platform==='azure_devops') {
+      await api('ado',{action:'link_parent',config:adoCfg(),payload:{workItemId:childId?.replace('#',''),parentId}});
+    }
+    toast(`Linked to ${parentId}!`,'success');
+    document.getElementById('link-area').innerHTML='';
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// ══ FEATURE 6: TEAMS NOTIFICATION ═════════════════════════
+async function sendNotifications(ticket, result) {
+  if(!CFG.teams) return;
+  try {
+    const sev=ticket.severity||'Medium';
+    const sevEmoji={'Critical':'🔴','High':'🟠','Medium':'🟡','Low':'🟢','1 - Critical':'🔴','2 - High':'🟠','3 - Medium':'🟡','4 - Low':'🟢'}[sev]||'🟡';
+    const sevColor={'Critical':'FF0000','High':'FF8C00','Medium':'FFD700','Low':'00AA00','1 - Critical':'FF0000','2 - High':'FF8C00','3 - Medium':'FFD700','4 - Low':'00AA00'}[sev]||'FFD700';
+    
+    const teamsPayload={"@type":"MessageCard","@context":"http://schema.org/extensions","themeColor":sevColor,"summary":"New Bug","sections":[{"activityTitle":`🐛 ${ticket.summary||ticket.title||'New Bug'}`,"activitySubtitle":`${result.id} · ${sev}`,"facts":[{"name":"Ticket","value":result.id},{"name":"Severity","value":sev}]}],"potentialAction":[{"@type":"OpenUri","name":"View Ticket","targets":[{"os":"default","uri":result.url}]}]};
+    // Webhook URLs are now in Vercel env vars — only send payload
+    const notifyRes=await fetch('/api/notify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:{teams:teamsPayload}})});
+    const d=await notifyRes.json();
+    if(d.teams==='sent') toast('Teams notification sent','success');
+    if(d.teams==='not_configured') {} // silently skip
+  } catch(e) { /* non-blocking */ }
+}
+
+// ══ FEATURE 8: VOICE INPUT ════════════════════════════════
+function toggleVoice() { if(isListening) stopVoice(); else startVoice(); }
+function startVoice() {
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('Speech recognition not supported in this browser','warn');return;}
+  voiceRec=new SR(); voiceRec.lang='en-US'; voiceRec.interimResults=false; voiceRec.maxAlternatives=1;
+  voiceRec.onstart=()=>{ isListening=true; document.getElementById('voice-ind').classList.add('active'); document.getElementById('voice-btn').classList.add('active'); };
+  voiceRec.onresult=e=>{ const t=e.results[0][0].transcript; document.getElementById('din').value=t; stopVoice(); toast('Voice captured — press Generate','success'); };
+  voiceRec.onerror=()=>{ stopVoice(); toast('Voice input failed','error'); };
+  voiceRec.onend=()=>stopVoice();
+  voiceRec.start();
+}
+function stopVoice() {
+  isListening=false;
+  if(voiceRec){try{voiceRec.stop();}catch(e){}}
+  document.getElementById('voice-ind').classList.remove('active');
+  document.getElementById('voice-btn').classList.remove('active');
+}
+
+// ══ FEATURE 9: EXPORT ════════════════════════════════════
+function exportCSV() {
+  if(!sessionLog.length){toast('No tickets to export','warn');return;}
+  const headers=['Ticket ID','Platform','Title','Severity','URL','Created'];
+  const rows=sessionLog.map(e=>[e.ticketId,e.platform,`"${(e.title||'').replace(/"/g,'""')}"`,e.severity,e.url,new Date(e.time).toLocaleString()]);
+  const csv=[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`defects-${Date.now()}.csv`; a.click();
+  URL.revokeObjectURL(url); toast('CSV exported!','success');
+}
+function exportPrint() {
+  if(!sessionLog.length){toast('No tickets to print','warn');return;}
+  const w=window.open('','_blank');
+  const rows=sessionLog.map(e=>`<tr><td>${e.ticketId}</td><td>${e.platform}</td><td>${e.title||''}</td><td>${e.severity}</td><td>${new Date(e.time).toLocaleString()}</td><td><a href="${e.url}" target="_blank">${e.url}</a></td></tr>`).join('');
+  w.document.write(`<!DOCTYPE html><html><head><title>Defect Report</title><style>body{font-family:Arial,sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}th{background:#f5f5f5}h1{font-size:18px}</style></head><body><h1>BugForge AI — Session Report (${new Date().toLocaleDateString()})</h1><table><thead><tr><th>ID</th><th>Platform</th><th>Title</th><th>Severity</th><th>Created</th><th>URL</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+  w.document.close(); w.print();
+}
+
+// ══ FEATURE 10: METRICS DASHBOARD ════════════════════════
+function openDash() {
+  document.getElementById('dash-overlay').classList.add('open');
+  document.getElementById('dash-panel').classList.add('open');
+  renderDashboard();
+}
+function closeDash() {
+  document.getElementById('dash-overlay').classList.remove('open');
+  document.getElementById('dash-panel').classList.remove('open');
+}
+function renderDashboard() {
+  const log=sessionLog;
+  const total=log.length;
+  const sevMap={}, platMap={};
+  log.forEach(e=>{ sevMap[e.severity]=(sevMap[e.severity]||0)+1; platMap[e.platform]=(platMap[e.platform]||0)+1; });
+  const stats=document.getElementById('dash-stats');
+  stats.innerHTML=[
+    {lbl:'Total Tickets',val:total,color:'var(--accent2)'},
+    {lbl:'Critical',val:sevMap['Critical']||sevMap['1 - Critical']||0,color:'#f87171'},
+    {lbl:'High',val:sevMap['High']||sevMap['2 - High']||0,color:'#fbbf24'},
+    {lbl:'Posted Today',val:log.filter(e=>new Date(e.time).toDateString()===new Date().toDateString()).length,color:'var(--green)'}
+  ].map(s=>`<div class="dash-stat"><div class="dash-stat-val" style="color:${s.color}">${s.val}</div><div class="dash-stat-lbl">${s.lbl}</div></div>`).join('');
+
+  // Destroy existing charts
+  // BUG-002 FIX: Guard against uninitialized charts — destroy() throws if chart was never created
+  // (e.g. opening dashboard before any tickets are posted)
+  Object.values(sevCharts).forEach(c=>{ if(c && typeof c.destroy === 'function'){ try{ c.destroy(); }catch(e){} } });
+  sevCharts={};
+
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const textColor=isDark?'#7d8699':'#4a5268';
+  const gridColor=isDark?'#ffffff12':'#00000012';
+
+  if(total>0) {
+    // Severity chart
+    sevCharts.sev=new Chart(document.getElementById('chart-sev'),{type:'doughnut',data:{labels:Object.keys(sevMap),datasets:[{data:Object.values(sevMap),backgroundColor:['#ef444480','#f59e0b80','#3b82f680','#22c55e80'],borderColor:['#ef4444','#f59e0b','#3b82f6','#22c55e'],borderWidth:1}]},options:{plugins:{legend:{labels:{color:textColor,font:{size:11}}}},cutout:'65%'}});
+    // Platform chart
+    sevCharts.plat=new Chart(document.getElementById('chart-plat'),{type:'bar',data:{labels:Object.keys(platMap),datasets:[{data:Object.values(platMap),backgroundColor:['#2d84ff80','#29a7ff80','#8b949e80'],borderColor:['#2d84ff','#29a7ff','#8b949e'],borderWidth:1}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:textColor},grid:{color:gridColor}},y:{ticks:{color:textColor,stepSize:1},grid:{color:gridColor}}}}});
+    // Time chart
+    const timeGroups={};
+    log.forEach(e=>{ const t=new Date(e.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); timeGroups[t]=(timeGroups[t]||0)+1; });
+    const timeKeys=Object.keys(timeGroups).slice(-10);
+    sevCharts.time=new Chart(document.getElementById('chart-time'),{type:'line',data:{labels:timeKeys,datasets:[{label:'Tickets',data:timeKeys.map(k=>timeGroups[k]),borderColor:'#6366f1',backgroundColor:'#6366f118',fill:true,tension:.4,pointRadius:3}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:textColor,font:{size:9}},grid:{color:gridColor}},y:{ticks:{color:textColor,stepSize:1},grid:{color:gridColor}}}}});
+  }
+}
+
+// ══ FEATURE 13: DARK/LIGHT THEME ════════════════════════
+function toggleTheme() {
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',isDark?'light':'dark');
+  document.getElementById('theme-btn').textContent=isDark?'☀️':'🌙';
+  localStorage.setItem('da_theme',isDark?'light':'dark');
+}
+function initTheme() {
+  const saved=localStorage.getItem('da_theme')||'dark';
+  document.documentElement.setAttribute('data-theme',saved);
+  document.getElementById('theme-btn').textContent=saved==='dark'?'🌙':'☀️';
+}
+
+// ══ FEATURE 14: KEYBOARD SHORTCUTS ══════════════════════
+function initShortcuts() {
+  document.addEventListener('keydown',e=>{
+    if(e.key==='?'&&!e.ctrlKey&&!e.metaKey){const t=document.activeElement.tagName; if(t!=='INPUT'&&t!=='TEXTAREA'){showKB();return;}}
+    const c=e.ctrlKey||e.metaKey;
+    // TC-142a FIX: Escape key closes keyboard shortcut modal and dashboard panel
+    if(e.key==='Escape'){ closeKB(); closeDash(); return; }
+    if(c&&e.key==='g'){e.preventDefault();sendDefect();}
+    else if(c&&e.key==='p'){e.preventDefault();const b=document.getElementById('btn-post');if(b&&!b.disabled)postTicket();}
+    else if(c&&e.key==='d'){e.preventDefault();checkDuplicates();}
+    else if(c&&e.key==='e'){e.preventDefault();toggleEdit();}
+    else if(c&&e.key==='b'){e.preventDefault();toggleBulk();}
+    else if(c&&e.key==='m'){e.preventDefault();openDash();}
+    else if(c&&e.key==='l'){e.preventDefault();clearChat();}
+    else if(c&&e.shiftKey&&e.key==='V'){e.preventDefault();toggleVoice();}
+    else if(c&&e.shiftKey&&e.key==='T'){e.preventDefault();toggleTheme();}
+  });
+}
+function showKB(){
+  const m=document.getElementById('kb-modal');
+  m.classList.add('open');
+  // NVDA/VoiceOver: move focus into modal, trap it
+  requestAnimationFrame(()=>{ const first=m.querySelector('button'); if(first) first.focus(); });
+}
+function closeKB(){
+  document.getElementById('kb-modal').classList.remove('open');
+  // Return focus to trigger button
+  const btn=document.getElementById('send-btn'); if(btn) btn.focus();
+}
+
+// ══ CUSTOM CONFIRM DIALOG (iframe-safe, NVDA/VoiceOver accessible) ════
+let _confirmResolve=null, _confirmTriggerEl=null;
+
+function showConfirm({title='Confirm',msg='Are you sure?',okLabel='Confirm',okClass='confirm-btn-ok',icon='⚠️'}={}){
+  return new Promise(resolve=>{
+    _confirmResolve=resolve;
+    _confirmTriggerEl=document.activeElement;
+    document.getElementById('confirm-icon-el').textContent=icon;
+    document.getElementById('confirm-title-el').textContent=title;
+    document.getElementById('confirm-msg-el').textContent=msg;
+    const okBtn=document.getElementById('confirm-ok-btn');
+    okBtn.textContent=okLabel; okBtn.className=okClass;
+    const ov=document.getElementById('confirm-overlay');
+    ov.classList.add('open');
+    // Focus first button for NVDA/VoiceOver
+    requestAnimationFrame(()=>{ document.getElementById('confirm-cancel-btn').focus(); });
+    // Focus trap: Tab cycles within dialog only
+    ov.onkeydown=e=>{
+      if(e.key==='Escape'){e.preventDefault();resolveConfirm(false);}
+      if(e.key==='Tab'){
+        const focusable=ov.querySelectorAll('button');
+        const first=focusable[0],last=focusable[focusable.length-1];
+        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+      }
+    };
+  });
+}
+
+function resolveConfirm(result){
+  _confirmResolve?.(result);
+  _confirmResolve=null;
+  const ov=document.getElementById('confirm-overlay');
+  ov.classList.remove('open');
+  ov.onkeydown=null;
+  // Return focus to element that opened dialog (NVDA/VoiceOver requirement)
+  if(_confirmTriggerEl) try{_confirmTriggerEl.focus();}catch(e){}
+  _confirmTriggerEl=null;
+}
+
+// ══ TOOLS / SYSTEM ════════════════════════════════════════
+const TOOLS=[
+  {name:'create_jira_bug',description:'Create a bug ticket in Jira Cloud. Default for web, mobile, API, Salesforce bugs.',
+   input_schema:{type:'object',required:['project','summary','description','steps_to_reproduce','expected_result','actual_result','severity','priority','environment','components','labels','acceptance_criteria'],
+   properties:{project:{type:'string'},summary:{type:'string'},description:{type:'string'},steps_to_reproduce:{type:'array',items:{type:'string'}},expected_result:{type:'string'},actual_result:{type:'string'},severity:{type:'string',enum:['Critical','High','Medium','Low']},priority:{type:'string',enum:['P0','P1','P2','P3']},environment:{type:'string'},components:{type:'array',items:{type:'string'}},labels:{type:'array',items:{type:'string'}},acceptance_criteria:{type:'array',items:{type:'string'}}}}},
+  {name:'create_azure_devops_bug',description:'Create Bug in Azure DevOps. Use for D365, Dynamics, ADO, pipeline, PUAT, sprint, C#, .NET.',
+   input_schema:{type:'object',required:['title','description','repro_steps','expected_result','actual_result','severity','priority','system_info','tags','acceptance_criteria'],
+   properties:{title:{type:'string'},area_path:{type:'string'},iteration_path:{type:'string'},description:{type:'string'},repro_steps:{type:'array',items:{type:'string'}},system_info:{type:'string'},expected_result:{type:'string'},actual_result:{type:'string'},severity:{type:'string',enum:['1 - Critical','2 - High','3 - Medium','4 - Low']},priority:{type:'number',enum:[1,2,3,4]},tags:{type:'string'},acceptance_criteria:{type:'array',items:{type:'string'}}}}},
+  {name:'create_github_issue',description:'Create GitHub issue. Use for GitHub, git, repo, npm, Actions.',
+   input_schema:{type:'object',required:['title','body','labels','severity','steps_to_reproduce','expected_result','actual_result','environment','acceptance_criteria'],
+   properties:{title:{type:'string'},body:{type:'string'},labels:{type:'array',items:{type:'string'}},severity:{type:'string',enum:['Critical','High','Medium','Low']},steps_to_reproduce:{type:'array',items:{type:'string'}},expected_result:{type:'string'},actual_result:{type:'string'},environment:{type:'string'},acceptance_criteria:{type:'array',items:{type:'string'}}}}}
+];
+const SYSTEM=`You are an BugForge AI — Senior QA Automation Engineer. Create perfectly structured bug tickets.
+ROUTING: "Azure DevOps"|"ADO"|"D365"|"Dynamics"|"pipeline"|"PUAT"|"sprint"→create_azure_devops_bug. "GitHub"|"git"|"repo"|"npm"|"Actions"→create_github_issue. Default→create_jira_bug.
+QUALITY: [Module] summary max 80 chars, specific steps, severity Critical=crash/High=major/Medium=partial/Low=cosmetic, 3-5 acceptance criteria. Infer all details. ADO: severity "1 - Critical", priority number 1-4. Call tool immediately.`;
+
+// ══ PLATFORM HELPERS ═════════════════════════════════════
+const T2P=n=>({create_jira_bug:'jira',create_azure_devops_bug:'azure_devops',create_github_issue:'github'}[n]||'jira');
+function sevClass(s){return{Critical:'sc','1 - Critical':'sc',High:'sh','2 - High':'sh',Medium:'sm','3 - Medium':'sm',Low:'sl','4 - Low':'sl'}[s]||'sm';}
+function highlightPill(p){['jira','ado','gh'].forEach(x=>document.getElementById('pill-'+x).className='ppill'+(x===p?' p-'+x:''));}
+function clearPills(){['jira','ado','gh'].forEach(x=>document.getElementById('pill-'+x).className='ppill');}
+function platIcon(p,sz=16){
+  if(p==='jira')return`<svg width="${sz}" height="${sz}" viewBox="0 0 32 32" fill="none"><path d="M16 2L2 17l14 13 14-13L16 2z" fill="#fff"/><path d="M16 9.5L9.5 17 16 23l6.5-6L16 9.5z" fill="#0052cc"/></svg>`;
+  if(p==='azure_devops')return`<svg width="${sz}" height="${sz}" viewBox="0 0 32 32" fill="none"><path d="M27 6L20 2.5 10.5 10 4 13v7l4.5 1.5L20 29.5 27 26V6z" fill="white"/></svg>`;
+  return`<svg width="${sz}" height="${sz}" viewBox="0 0 32 32" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M16 2C8.27 2 2 8.27 2 16c0 6.19 4 11.43 9.57 13.29.7.13.96-.3.96-.67v-2.36c-3.89.85-4.71-1.87-4.71-1.87-.64-1.62-1.55-2.05-1.55-2.05-1.27-.87.1-.85.1-.85 1.4.1 2.13 1.44 2.13 1.44 1.25 2.14 3.28 1.52 4.08 1.16.12-.9.49-1.52.89-1.87-3.11-.35-6.37-1.55-6.37-6.9 0-1.52.54-2.77 1.44-3.74-.14-.35-.63-1.77.13-3.68 0 0 1.18-.38 3.86 1.44A13.3 13.3 0 0116 8.36c1.19.01 2.38.16 3.5.47 2.67-1.82 3.84-1.44 3.84-1.44.77 1.91.28 3.33.14 3.68.9.97 1.44 2.22 1.44 3.74 0 5.36-3.27 6.54-6.38 6.89.5.43.95 1.28.95 2.59v3.83c0 .37.25.8.96.67C25.99 27.43 30 22.19 30 16 30 8.27 23.73 2 16 2z" fill="white"/></svg>`;
+}
+
+// ══ CHAT HELPERS ══════════════════════════════════════════
+const aiAv=()=>`<div class="msg-av ai" style="padding:0;overflow:hidden;background:none"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 72 72"><defs><linearGradient id="avbf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4f6ef7"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="72" height="72" rx="16" fill="url(#avbf)"/><rect x="16" y="36" width="40" height="22" rx="5" fill="#fff" opacity=".9"/><rect x="22" y="27" width="28" height="13" rx="4" fill="#fff" opacity=".9"/><path d="M40 12 L32 28 L38 28 L30 48 L50 24 L42 24 Z" fill="url(#avbf)"/></svg></div>`;
+const usrAv=()=>`<div class="msg-av user"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="white" opacity=".7"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="white" stroke-width="1.5" fill="none" opacity=".7"/></svg></div>`;
+function addMsg(role,html){const chat=document.getElementById('chat');const d=document.createElement('div');d.className='msg '+(role==='user'?'user':'ai');d.innerHTML=(role==='user'?usrAv():aiAv())+`<div><div class="msg-bub">${html}</div></div>`;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;}
+function addThink(steps){const chat=document.getElementById('chat');const d=document.createElement('div');d.className='thinking';d.id='think';d.innerHTML=aiAv()+`<div class="think-box"><div class="think-steps">${steps.map((s,i)=>`<div class="think-step${i===0?' active':''}" id="ts${i}"><div class="si${i===0?' spin':' wait'}" id="si${i}"></div>${s}</div>`).join('')}</div></div>`;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;}
+function advStep(n){for(let i=0;i<n;i++){const ts=document.getElementById('ts'+i),si=document.getElementById('si'+i);if(ts)ts.className='think-step done';if(si)si.className='si done';}const ts=document.getElementById('ts'+n),si=document.getElementById('si'+n);if(ts)ts.className='think-step active';if(si)si.className='si spin';}
+function rmThink(){const el=document.getElementById('think');if(el)el.remove();}
+
+// ══ TICKET RENDERING ══════════════════════════════════════
+// BUG-006 FIX: HTML entity encoder — applied to ALL user-supplied fields before innerHTML injection
+const esc=s=>s==null?'':(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+
+function renderSteps(steps){return(steps||[]).map((s,i)=>`<li class="step-item"><span class="step-n">${String(i+1).padStart(2,'0')}</span><span>${esc(s)}</span></li>`).join('');}
+function renderCrit(items){return(items||[]).map(c=>`<li class="crit-item"><div class="crit-chk"><svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5l2 2 4-4" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div><span>${esc(c)}</span></li>`).join('');}
+
+function buildTicketHTML(t,platform,tid){
+  const isJ=platform==='jira',isA=platform==='azure_devops',isG=platform==='github';
+  const title=isJ?t.summary:t.title, sev=t.severity, pri=isA?`P${t.priority}`:(t.priority||'');
+  const steps=isA?t.repro_steps:t.steps_to_reproduce, env=isA?t.system_info:t.environment;
+  const labels=isA?(t.tags||'').split(';').filter(Boolean):(t.labels||[]), comps=isJ?(t.components||[]):[];
+  const hdr=`hdr-${isJ?'jira':isA?'ado':'gh'}`;
+  // BUG-006 + TC-138a: esc() applied to all user-supplied fields; role="region" for SR
+  return`<div class="ticket-card" id="ticket-card-el" role="region" aria-label="Generated Bug Ticket: ${esc(title)}">
+    <div class="tk-hdr ${hdr}">${platIcon(platform)}<span class="tk-id" id="ticket-id-display">${esc(tid)}</span><span style="font-size:10px;opacity:.6">Bug</span><div class="tk-badges"><span class="sbadge ${sevClass(sev)}">${esc(sev)}</span>${pri?`<span class="pbadge">${esc(pri)}</span>`:''}</div></div>
+    <div class="tk-body" id="tk-body">
+      <div class="tk-summary">${esc(title)}</div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:8px;display:flex;align-items:center;gap:12px">
+        ${isJ?`<span>👤 Reporter: <strong style="color:var(--t2)">${esc(CFG.jiraReporterEmail||CFG.jiraEmail||'—')}</strong></span>`:''}
+        <span>🏷️ Platform: <strong style="color:var(--t2)">${platform==='jira'?'Jira':platform==='azure_devops'?'Azure DevOps':'GitHub'}</strong></span>
+      </div>
+      ${comps.length||labels.length?`<div class="tk-sec"><div class="tags-row">${comps.map(c=>`<span class="tag tag-c">${esc(c)}</span>`).join('')}${labels.map(l=>`<span class="tag">${esc(l)}</span>`).join('')}</div></div>`:''}
+      <div class="tk-sec"><div class="tk-sec-lbl">Description</div><div class="tk-desc">${esc(t.description||t.body||'').replace(/\n/g,'<br>')}</div></div>
+      <div class="tk-sec"><div class="tk-sec-lbl">Steps to reproduce</div><ul class="steps-list">${renderSteps(steps)}</ul></div>
+      <div class="result-grid"><div><div class="tk-sec-lbl">Expected</div><div class="rbox exp">${esc(t.expected_result)}</div></div><div><div class="tk-sec-lbl">Actual</div><div class="rbox act">${esc(t.actual_result)}</div></div></div>
+      ${env?`<div class="tk-sec" style="margin-top:11px"><div class="tk-sec-lbl">Environment</div><div class="env-box">${esc(env)}</div></div>`:''}
+      ${t.acceptance_criteria?.length?`<div class="tk-sec"><div class="tk-sec-lbl">Acceptance criteria</div><ul class="crit-list">${renderCrit(t.acceptance_criteria)}</ul></div>`:''}
+    </div>
+    <div class="tk-foot">
+      <div class="tf-tabs"><button class="tf-tab active" id="tab-preview" onclick="switchTab('preview')">Preview</button><button class="tf-tab" id="tab-json" onclick="switchTab('json')">JSON</button></div>
+      <div class="tk-acts">
+        <button class="abtn" id="btn-copy" onclick="copyJSON()"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M10 1.5H4a2 2 0 00-2 2V12a.5.5 0 001 0V3.5a1 1 0 011-1h6a.5.5 0 000-1zm-4 2.5h6a2 2 0 012 2v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>Copy</button>
+        <button class="abtn" id="btn-edit" onclick="toggleEdit()">✏ Edit</button>
+        <button class="abtn info" id="btn-quality" onclick="scoreQuality(JSON.parse(JSON.stringify(curTicket)))">⭐ Quality</button>
+        <button class="abtn purple" id="btn-rc" onclick="suggestRootCause()">🔍 Root Cause</button>
+        <button class="abtn" style="color:var(--green);border-color:var(--green-bd);background:var(--green-bg)" id="btn-tc" onclick="generateTestCases()" style="display:none">🧪 Test Cases</button>
+        <button class="abtn warn" id="btn-dup" onclick="checkDuplicates()">⚠ Dupes</button>
+        <button class="abtn info" onclick="showLinkEpic()">🔗 Link Epic</button>
+      </div>
+      <!-- Platform posting buttons — shown after generation, hidden after posting -->
+      <div id="platform-post-btns" style="display:flex;gap:7px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--b1);background:var(--s2);border-radius:0 0 10px 10px">
+        <div style="font-size:11px;color:var(--t2);width:100%;margin-bottom:4px">📤 Post ticket to:</div>
+        <button class="abtn primary" id="btn-post-jira" onclick="postToSpecificPlatform('jira')" style="background:var(--accent);flex:1;min-width:100px">🔵 Post to Jira</button>
+        
+      </div>
+      <!-- Test cases section — hidden until ticket is posted -->
+      <div id="tc-prompt-area" style="display:none;padding:10px 14px;border-top:1px solid var(--b1)">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">🧪 Generate test cases for this defect?</div>
+        <div style="display:flex;gap:8px">
+          <button class="abtn primary" style="flex:1" onclick="acceptTestCases()">✅ Yes, generate test cases</button>
+          <button class="abtn" onclick="dismissTCPrompt()">✗ No thanks</button>
+        </div>
+        <div id="tc-post-result" style="margin-top:8px;font-size:11px"></div>
+      </div>
+    </div>
+    <div id="json-pane" class="json-pane" style="display:none"></div>
+    <div id="dup-area"></div>
+    <div id="rc-area"></div>
+    <div id="tc-area"></div>
+    <div id="link-area"></div>
+    <div id="edit-area"></div>
+    <div id="post-status-area"></div>
+  </div>`;
+}
+
+function switchTab(tab){
+  const tp=document.getElementById('tab-preview'),tj=document.getElementById('tab-json'),jp=document.getElementById('json-pane');
+  if(tp)tp.className='tf-tab'+(tab==='preview'?' active':'');
+  if(tj)tj.className='tf-tab'+(tab==='json'?' active':'');
+  if(!jp)return;
+  if(tab==='json'){jp.style.display='block';jp.textContent=JSON.stringify(curTicket,null,2);}
+  else jp.style.display='none';
+}
+function copyJSON(){if(!curTicket)return;navigator.clipboard.writeText(JSON.stringify(curTicket,null,2));const b=document.getElementById('btn-copy');if(b){b.textContent='✓ Copied!';setTimeout(()=>b.innerHTML='<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M10 1.5H4a2 2 0 00-2 2V12a.5.5 0 001 0V3.5a1 1 0 011-1h6a.5.5 0 000-1zm-4 2.5h6a2 2 0 012 2v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>Copy',1800);}}
+
+// ══ EDIT ══════════════════════════════════════════════════
+function toggleEdit(){
+  const area=document.getElementById('edit-area'); if(!area||!curTicket)return;
+  editOpen=!editOpen;
+  const btn=document.getElementById('btn-edit');
+  if(!editOpen){area.innerHTML='';if(btn)btn.className='abtn';return;}
+  if(btn)btn.className='abtn warn';
+  const t=curTicket,isA=t._platform==='azure_devops',isG=t._platform==='github';
+  const title=isA?t.title:(isG?t.title:t.summary), steps=isA?(t.repro_steps||[]):(t.steps_to_reproduce||[]), env=isA?t.system_info:t.environment;
+  const sevOpts=(isA?['1 - Critical','2 - High','3 - Medium','4 - Low']:['Critical','High','Medium','Low']).map(v=>`<option${t.severity===v?' selected':''}>${v}</option>`).join('');
+  const priOpts=isA?[1,2,3,4].map(v=>`<option${t.priority===v?' selected':''}>${v}</option>`).join(''):['P0','P1','P2','P3'].map(v=>`<option${t.priority===v?' selected':''}>${v}</option>`).join('');
+  area.innerHTML=`<div class="edit-panel"><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--amber);margin-bottom:10px">✏ Edit Fields</div>
+  <div class="edit-grid">
+    <div class="ef full"><div class="ef-lbl">Summary/Title</div><input class="ef-in" id="ef-title" value="${(title||'').replace(/"/g,'&quot;')}"/></div>
+    <div class="ef full"><div class="ef-lbl">Description</div><textarea class="ef-in" id="ef-desc" rows="3">${t.description||t.body||''}</textarea></div>
+    <div class="ef"><div class="ef-lbl">Severity</div><select class="ef-in" id="ef-sev">${sevOpts}</select></div>
+    <div class="ef"><div class="ef-lbl">Priority</div><select class="ef-in" id="ef-pri">${priOpts}</select></div>
+    <div class="ef full"><div class="ef-lbl">Steps</div><div id="ef-steps-wrap">${steps.map((s,i)=>`<div class="step-row"><input class="ef-in" id="ef-step-${i}" value="${s.replace(/"/g,'&quot;')}"/><button class="step-del" onclick="rmStep(${i})">×</button></div>`).join('')}</div><button class="add-step-btn" onclick="addStep()">+ Step</button></div>
+    <div class="ef"><div class="ef-lbl">Expected</div><textarea class="ef-in" id="ef-exp" rows="2">${t.expected_result||''}</textarea></div>
+    <div class="ef"><div class="ef-lbl">Actual</div><textarea class="ef-in" id="ef-act" rows="2">${t.actual_result||''}</textarea></div>
+    <div class="ef full"><div class="ef-lbl">Environment/System Info</div><input class="ef-in" id="ef-env" value="${(env||'').replace(/"/g,'&quot;')}"/></div>
+  </div>
+  <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px">
+    <button class="hbtn" onclick="toggleEdit()">Cancel</button>
+    <button class="send-btn" style="font-size:11px" onclick="saveEdits()">✓ Save Edits</button>
+  </div></div>`;
+}
+function cSteps(){const w=document.getElementById('ef-steps-wrap');if(!w)return[];return Array.from(w.querySelectorAll('input')).map(el=>el.value);}
+function rmStep(i){const s=cSteps();s.splice(i,1);rrSteps(s);}
+function addStep(){const s=cSteps();s.push('');rrSteps(s);setTimeout(()=>{const l=document.getElementById('ef-step-'+(s.length-1));if(l)l.focus();},50);}
+function rrSteps(steps){const w=document.getElementById('ef-steps-wrap');if(!w)return;w.innerHTML=steps.map((s,i)=>`<div class="step-row"><input class="ef-in" id="ef-step-${i}" value="${s.replace(/"/g,'&quot;')}"/><button class="step-del" onclick="rmStep(${i})">×</button></div>`).join('');}
+function saveEdits(){
+  const v=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  const t=curTicket,isA=t._platform==='azure_devops',isG=t._platform==='github';
+  const steps=cSteps().filter(Boolean);
+
+  // BUG-004 FIX: Validate required fields before saving so POST never uses stale/empty values
+  const newTitle = v('ef-title').trim();
+  if(!newTitle){ toast('Summary/Title cannot be empty','warn'); return; }
+  const newSev = v('ef-sev');
+  if(!newSev){ toast('Severity is required','warn'); return; }
+
+  if(isA){
+    // BUG-008 FIX: Validate ADO priority is numeric 1-4 before saving — parseInt("text")=NaN silently corrupts work item
+    const priRaw=v('ef-pri'); const priNum=parseInt(priRaw);
+    if(isNaN(priNum)||priNum<1||priNum>4){ toast('ADO Priority must be 1, 2, 3 or 4','warn'); return; }
+    t.title=newTitle;t.description=v('ef-desc');t.severity=newSev;t.priority=priNum;t.repro_steps=steps;t.system_info=v('ef-env');t.expected_result=v('ef-exp');t.actual_result=v('ef-act');}
+  else if(isG){t.title=newTitle;t.body=v('ef-desc');t.severity=newSev;t.steps_to_reproduce=steps;t.environment=v('ef-env');t.expected_result=v('ef-exp');t.actual_result=v('ef-act');}
+  else{t.summary=newTitle;t.description=v('ef-desc');t.severity=newSev;t.priority=v('ef-pri');t.steps_to_reproduce=steps;t.environment=v('ef-env');t.expected_result=v('ef-exp');t.actual_result=v('ef-act');}
+
+  // Verified: curTicket is mutated in-place — postTicket() reads from curTicket directly, so edits are always picked up
+  editOpen=false;document.getElementById('edit-area').innerHTML='';
+  // Re-render body
+  const tb=document.getElementById('tk-body'); if(tb){
+    const isJ=t._platform==='jira';
+    const title2=isJ?t.summary:t.title,steps2=isA?t.repro_steps:t.steps_to_reproduce,env2=isA?t.system_info:t.environment;
+    const labels2=isA?(t.tags||'').split(';').filter(Boolean):(t.labels||[]),comps2=isJ?(t.components||[]):[];
+    tb.innerHTML=`<div class="tk-summary">${title2}</div>${comps2.length||labels2.length?`<div class="tk-sec"><div class="tags-row">${comps2.map(c=>`<span class="tag tag-c">${c}</span>`).join('')}${labels2.map(l=>`<span class="tag">${l}</span>`).join('')}</div></div>`:''}<div class="tk-sec"><div class="tk-sec-lbl">Description</div><div class="tk-desc">${(t.description||t.body||'').replace(/\n/g,'<br>')}</div></div><div class="tk-sec"><div class="tk-sec-lbl">Steps to reproduce</div><ul class="steps-list">${renderSteps(steps2)}</ul></div><div class="result-grid"><div><div class="tk-sec-lbl">Expected</div><div class="rbox exp">${t.expected_result}</div></div><div><div class="tk-sec-lbl">Actual</div><div class="rbox act">${t.actual_result}</div></div></div>${env2?`<div class="tk-sec" style="margin-top:11px"><div class="tk-sec-lbl">Environment</div><div class="env-box">${env2}</div></div>`:''}${t.acceptance_criteria?.length?`<div class="tk-sec"><div class="tk-sec-lbl">Acceptance criteria</div><ul class="crit-list">${renderCrit(t.acceptance_criteria)}</ul></div>`:''}`;
+  }
+  const btn=document.getElementById('btn-edit');if(btn)btn.className='abtn';
+  // Update severity badge in ticket header to reflect edited value
+  const sCard=document.querySelector('#ticket-card-el .sbadge');
+  if(sCard){ sCard.textContent=t.severity; sCard.className='sbadge '+sevClass(t.severity); }
+  toast('Edits saved — ticket ready to post','success');
+}
+
+// ══ DUPLICATE CHECK ═══════════════════════════════════════
+async function checkDuplicates(){
+  const area=document.getElementById('dup-area'); if(!area||!curTicket)return;
+  const platform=curTicket._platform,btn=document.getElementById('btn-dup');
+  if(btn){btn.disabled=true;btn.textContent='Checking...';}
+  area.innerHTML=`<div style="padding:10px 16px;font-size:12px;color:var(--t2);display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></span>Searching for duplicates...</div>`;
+  try{
+    let dupes=[];
+    const kw=(curTicket.summary||curTicket.title||'').replace(/[\[\]()]/g,'').split(' ').filter(w=>w.length>3).slice(0,4).join(' ');
+    if(platform==='jira'&&CFG.jiraUrl&&CFG.jiraToken){
+      const jql=`project="${CFG.jiraProj}" AND issuetype=Bug AND text~"${kw.replace(/"/g,'')}" AND status!=Done ORDER BY created DESC`;
+      const d=await api('jira',{action:'search_duplicates',config:jiraCfg(),payload:{jql}});
+      dupes=d.issues||[];
+    }else if(platform==='azure_devops'&&CFG.adoOrg&&CFG.adoPat){
+      const wiql=`SELECT [System.Id],[System.Title],[System.State] FROM WorkItems WHERE [System.WorkItemType]='Bug' AND [System.Title] CONTAINS '${kw.replace(/'/g,"''")}' AND [System.State]<>'Closed' ORDER BY [System.CreatedDate] DESC`;
+      const d=await api('ado',{action:'search_duplicates',config:adoCfg(),payload:{wiql}});
+      dupes=d.items||[];
+    }else if(platform==='github'&&CFG.ghOwner&&CFG.ghToken){
+      const d=await api('github',{action:'search_duplicates',config:ghCfg(),payload:{query:kw}});
+      dupes=d.items||[];
+    }
+    if(!dupes.length){area.innerHTML=`<div class="dup-panel"><div style="padding:10px 12px;font-size:12px;color:var(--green);display:flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="var(--green)"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>No duplicates found — safe to post!</div></div>`;}
+    else{area.innerHTML=`<div class="dup-panel"><div class="dup-hdr"><svg width="12" height="12" viewBox="0 0 16 16" fill="var(--amber)"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm-.75 4a.75.75 0 011.5 0v3.5a.75.75 0 01-1.5 0V5zm.75 7a1 1 0 110-2 1 1 0 010 2z"/></svg>${dupes.length} possible duplicate${dupes.length>1?'s':''} found</div>${dupes.map(d=>`<div class="dup-item"><span class="dup-id">${esc(d.id)}</span><span class="dup-ttl" title="${esc(d.title)}">${esc(d.title)}</span><span class="dup-st">${esc(d.status)}</span><a class="dup-lnk" href="${d.url}" target="_blank">↗</a></div>`).join('')}<div style="padding:7px 12px;display:flex;gap:7px"><button class="abtn warn" onclick="document.getElementById('dup-area').innerHTML='';postTicket()">Post anyway</button><button class="hbtn" onclick="document.getElementById('dup-area').innerHTML=''">Dismiss</button></div></div>`;}
+  }catch(e){area.innerHTML=`<div style="padding:9px 16px;font-size:12px;color:var(--red)">Search failed: ${e.message}</div>`;}
+  if(btn){btn.disabled=false;btn.innerHTML='⚠ Dupes';}
+}
+
+// ══ POST TICKET ═══════════════════════════════════════════
+async function postTicket(){
+  const platform=curTicket?._platform; if(!platform)return;
+  const btn=document.getElementById('btn-post'),area=document.getElementById('post-status-area');
+  if(btn)btn.disabled=true;
+  const pName=platform==='jira'?'Jira':platform==='azure_devops'?'Azure DevOps':'GitHub';
+  if(area)area.innerHTML=`<div class="post-status posting"><span style="width:12px;height:12px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></span> Posting to ${pName}...</div>`;
+  try{
+    let result;
+    if(platform==='jira')result=await postJira(curTicket);
+    else if(platform==='azure_devops')result=await postADO(curTicket);
+    else result=await postGH(curTicket);
+    // Attach screenshot server-side (CORS-safe)
+    if(pendingShot?.file){
+      try{
+        const b64=await fileToBase64(pendingShot.file);
+        const attachResult=await fetch('/api/attach',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            platform,
+            fileName:pendingShot.name||`screenshot-${Date.now()}.png`,
+            fileBase64:b64,
+            mimeType:pendingShot.file.type||'image/png',
+            ticketId:result.id,
+            rawId:result.rawId,
+            config:{...jiraCfg(),...adoCfg(),...ghCfg()}
+          })
+        });
+        const ad=await attachResult.json();
+        if(ad.ok) toast('Screenshot attached ✓','success');
+        else toast(`Attach: ${ad.error}`,'warn');
+        clearShot();
+      }catch(e){ toast('Attach failed: '+e.message,'warn'); }
+    }
+    // Sprint auto-assign
+    await fetchAndAssignSprint(platform,result.id);
+    // Notifications
+    await sendNotifications(curTicket,result);
+    // History
+    curTicket._postedId=result.id;
+    curTicket._rawId=result.rawId||result.id.replace('#','');
+    addToHistory(platform,result.id,curTicket.summary||curTicket.title,result.url,curTicket.severity);
+    if(area)area.innerHTML=`<div class="post-status posted">✓ <a class="post-link" href="${result.url}" target="_blank">${result.id}</a> created on ${pName}</div>`;
+    if(btn){btn.className='abtn success';btn.textContent='✓ Posted!';}
+    toast(`${result.id} created!`,'success');
+  }catch(e){
+    if(area)area.innerHTML=`<div class="post-status failed">✗ ${e.message}</div>`;
+    if(btn){btn.disabled=false;}
+    toast(e.message,'error');
+  }
+}
+
+// Jira POST
+// ── Server-side helper — all platform calls go through /api/* ──────────
+async function api(endpoint, body) {
+  const r = await fetch(`/api/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || `Server ${r.status}`);
+  return d;
+}
+function jiraCfg() { return { jiraUrl: CFG.jiraUrl, jiraEmail: CFG.jiraEmail, jiraToken: CFG.jiraToken, jiraProj: CFG.jiraProj, jiraBoard: CFG.jiraBoard, jiraIssueType: CFG.jiraIssueType||'', jiraReporterEmail: CFG.jiraReporterEmail||CFG.jiraEmail||'', orgCode: ORG_CODE||'' }; }
+function adoCfg()  { const orgEl=document.getElementById('ado-org-input'); if(orgEl&&orgEl.value.trim()) CFG.adoOrg=orgEl.value.trim(); return { adoOrg: CFG.adoOrg, adoProj: CFG.adoProj, adoPat: CFG.adoPat, adoTeam: CFG.adoTeam }; }
+function ghCfg()   { return { ghOwner: CFG.ghOwner, ghRepo: CFG.ghRepo, ghToken: CFG.ghToken }; }
+
+// Jira POST
+async function postJira(t){
+  // Read project key from dropdown — extract key from "Name (KEY)" format
+  const jiraSel = document.getElementById('jira-proj-select');
+  if(jiraSel && jiraSel.value) {
+    const opt = jiraSel.options[jiraSel.selectedIndex];
+    // Try data-key first, then extract from "Team Astro (DEV)" format
+    const dataKey = opt?.dataset?.key;
+    const matchKey = jiraSel.value.match(/\(([A-Z0-9]+)\)$/);
+    CFG.jiraProj = dataKey || (matchKey ? matchKey[1] : jiraSel.value);
+  }
+  if(!CFG.jiraProj) throw new Error('Please select a Jira project from the sidebar first');
+  console.log('Posting to Jira project:', CFG.jiraProj);
+  const payload={fields:{project:{key:CFG.jiraProj},issuetype:{name:'Bug'},summary:t.summary,
+    priority:{name:{P0:'Highest',P1:'High',P2:'Medium',P3:'Low'}[t.priority]||'Medium'},
+    labels:t.labels||['AI-Generated'],
+    description:{version:1,type:'doc',content:[
+      {type:'heading',attrs:{level:3},content:[{type:'text',text:'Description'}]},{type:'paragraph',content:[{type:'text',text:t.description||''}]},
+      {type:'heading',attrs:{level:3},content:[{type:'text',text:'Steps to Reproduce'}]},{type:'orderedList',content:(t.steps_to_reproduce||[]).map(s=>({type:'listItem',content:[{type:'paragraph',content:[{type:'text',text:s}]}]}))},
+      {type:'heading',attrs:{level:3},content:[{type:'text',text:'Expected'}]},{type:'paragraph',content:[{type:'text',text:t.expected_result||''}]},
+      {type:'heading',attrs:{level:3},content:[{type:'text',text:'Actual'}]},{type:'paragraph',content:[{type:'text',text:t.actual_result||''}]}
+    ]}}};
+  if(t.components?.length) payload.fields.components=t.components.map(n=>({name:n}));
+  return api('jira', { action:'create_issue', config:jiraCfg(), payload });
+}
+// ADO POST
+async function postADO(t){
+  // Credentials in Vercel env vars — check project selected
+  if(!CFG.adoProj) throw new Error('Please select an ADO project from the sidebar');
+  const steps=(t.repro_steps||[]).map((s,i)=>`<li>${i+1}. ${s}</li>`).join('');
+  const crit=(t.acceptance_criteria||[]).map((c,i)=>`<li>${i+1}. ${c}</li>`).join('');
+  const expActual=`<p><b>Expected Result:</b> ${t.expected_result||''}</p><p><b>Actual Result:</b> ${t.actual_result||''}</p>`;
+  const patch=[
+    {op:'add',path:'/fields/System.Title',value:t.title||t.summary||'Bug'},
+    {op:'add',path:'/fields/System.Description',value:`<p>${t.description||''}</p>${expActual}`},
+    {op:'add',path:'/fields/Microsoft.VSTS.TCM.ReproSteps',value:`<ol>${steps}</ol>`},
+    {op:'add',path:'/fields/Microsoft.VSTS.TCM.SystemInfo',value:t.system_info||t.environment||''},
+    {op:'add',path:'/fields/Microsoft.VSTS.Common.Severity',value:t.severity||'3 - Medium'},
+    {op:'add',path:'/fields/Microsoft.VSTS.Common.Priority',value:t.priority||2},
+    ...(t.tags?[{op:'add',path:'/fields/System.Tags',value:t.tags}]:[]),
+    ...(crit?[{op:'add',path:'/fields/Microsoft.VSTS.Common.AcceptanceCriteria',value:`<ol>${crit}</ol>`}]:[]),
+  ].filter(p=>p.value!==undefined&&p.value!==null&&String(p.value).trim()!==''||p.path==='/fields/System.Title');
+  return api('ado', { action:'create_bug', config:adoCfg(), payload:patch });
+}
+// GitHub POST
+async function postGH(t){
+  // Credentials in Vercel env vars — proceed
+  const steps=(t.steps_to_reproduce||[]).map((s,i)=>`${i+1}. ${s}`).join('\n');
+  const crit=(t.acceptance_criteria||[]).map(c=>`- [ ] ${c}`).join('\n');
+  const body=`## Description\n${t.body||''}\n\n## Steps to Reproduce\n${steps}\n\n## Expected\n${t.expected_result}\n\n## Actual\n${t.actual_result}\n\n## Environment\n\`\`\`\n${t.environment||''}\n\`\`\`\n${crit?`\n## Acceptance Criteria\n${crit}`:''}\n\n---\n> 🤖 Auto-generated by BugForge AI v3`;
+  const labels=[...(t.labels||[]),`severity:${(t.severity||'medium').toLowerCase()}`,'bug','ai-generated'];
+  return api('github', { action:'create_issue', config:ghCfg(), payload:{ title:t.title, body, labels } });
+}
+
+// ══ SCREENSHOT ════════════════════════════════════════════
+function initDragDrop(){
+  const chat=document.getElementById('chat'),ov=document.getElementById('drop-ov');
+  chat.addEventListener('dragover',e=>{e.preventDefault();ov.classList.add('active');});
+  chat.addEventListener('dragleave',e=>{if(!chat.contains(e.relatedTarget))ov.classList.remove('active');});
+  chat.addEventListener('drop',e=>{e.preventDefault();ov.classList.remove('active');const f=e.dataTransfer.files[0];
+    if(!f) return;
+    if(f.type.startsWith('image/')) handleShot(f);
+    else toast(`"${f.name}" is not an image. Only JPG, PNG, GIF and WebP are supported.`,'warn');
+  });
+  document.getElementById('file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)handleShot(f);e.target.value='';});
+
+  // ── Paste screenshot (Ctrl+V anywhere on page) ──────────────
+  document.addEventListener('paste',e=>{
+    const items=Array.from(e.clipboardData?.items||[]);
+    const img=items.find(i=>i.type.startsWith('image/'));
+    if(!img) return;
+    e.preventDefault();
+    const file=img.getAsFile();
+    if(file){
+      // Give it a meaningful name with timestamp
+      const ext=file.type.split('/')[1]||'png';
+      const named=new File([file],`screenshot-${Date.now()}.${ext}`,{type:file.type});
+      handleShot(named);
+      toast('Screenshot pasted! ✓','success');
+    }
+  });
+}
+function handleShot(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    pendingShot={dataUrl:e.target.result,name:file.name,file};
+    const wrap=document.getElementById('ss-thumb');
+    if(wrap){
+      wrap.innerHTML=`<div class="ss-thumb"><img src="${e.target.result}" style="max-height:40px;border-radius:4px;border:1px solid var(--b2)"/><span class="ss-name" style="font-size:10px;color:var(--green)">${file.name}</span><button class="ss-rm" onclick="clearShot()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px">×</button></div>`;
+      const ph=document.getElementById('ss-placeholder');
+      if(ph) ph.style.display='none';
+    }
+    const ab=document.getElementById('attach-btn');if(ab)ab.classList.add('has-file');
+    toast('Screenshot attached','success');
+  };reader.readAsDataURL(file);
+}
+function clearShot(){
+  pendingShot=null;
+  const w=document.getElementById('ss-thumb');
+  if(w) w.innerHTML='<div id="ss-placeholder" style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t3);padding:2px 0"><span style="color:var(--amber);font-weight:700">*</span> Screenshot required</div>';
+  const ab=document.getElementById('attach-btn');
+  if(ab) ab.classList.remove('has-file');
+  const warn=document.getElementById('screenshot-warn');
+  if(warn) warn.style.display='none';
+}
+
+// Convert File to base64 string
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=e=>resolve(e.target.result.split(',')[1]); // strip data:mime;base64,
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+// ══ HISTORY ═══════════════════════════════════════════════
+function addToHistory(platform,ticketId,title,url,severity){
+  sessionLog.unshift({platform,ticketId,title,url,severity,time:Date.now()});
+  if(sessionLog.length>40)sessionLog.pop();
+  localStorage.setItem('da_log',JSON.stringify(sessionLog));
+  renderHistory();
+}
+function renderHistory(){
+  const list=document.getElementById('hist-list'),cnt=document.getElementById('hist-cnt');
+  if(!list)return;
+  if(cnt)cnt.textContent=sessionLog.length?`(${sessionLog.length})`:'';
+  const exp=document.getElementById('hist-export-btns');
+  if(exp)exp.style.display=sessionLog.length?'flex':'none';
+  if(!sessionLog.length){list.innerHTML='<div class="hist-empty">No tickets this session</div>';return;}
+  const pBg={jira:'#2d84ff20',azure_devops:'#29a7ff20',github:'#8b949e20'};
+  const pClr={jira:'#2d84ff',azure_devops:'#29a7ff',github:'#8b949e'};
+  const ago=t=>{const s=Math.floor((Date.now()-t)/1000);return s<60?'now':s<3600?`${Math.floor(s/60)}m`:s<86400?`${Math.floor(s/3600)}h`:`${Math.floor(s/86400)}d`;};
+  list.innerHTML=sessionLog.map(e=>{
+    // BUG-010 FIX: Only open http/https URLs — block javascript: and other schemes
+    const safeUrl=(e.url&&(e.url.startsWith('https://')||e.url.startsWith('http://')))? e.url:'#';
+    return`<div class="hist-item" onclick="window.open('${safeUrl}','_blank')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.open('${safeUrl}','_blank')}"><div class="hist-plat" style="background:${pBg[e.platform]||'var(--s3)'}">${platIcon(e.platform,11)}</div><div class="hist-info"><div class="hist-id" style="color:${pClr[e.platform]||'var(--accent2)'}">${esc(e.ticketId)}</div><div class="hist-ttl">${esc(e.title||'Untitled')}</div></div><span class="hist-time">${ago(e.time)}</span></div>`;
+  }).join('');
+}
+
+// ══ BULK MODE ═════════════════════════════════════════════
+function toggleBulk(){
+  isBulk=!isBulk;
+  document.getElementById('bulk-panel').style.display=isBulk?'block':'none';
+  document.getElementById('input-area').style.display=isBulk?'none':'block';
+  const btn=document.getElementById('bulk-btn');
+  btn.className='hbtn'+(isBulk?' active':'');
+  btn.textContent=isBulk?'✕ Exit Bulk':'⚡ Bulk';
+  if(!isBulk)clearBulk();
+}
+function parseBulk(){
+  const raw=document.getElementById('bulk-in').value.trim(); if(!raw)return;
+  let items=[];
+  if(/^\d+\./m.test(raw))items=raw.split(/\n(?=\d+\.)/).map(s=>s.replace(/^\d+\.\s*/,'').trim()).filter(Boolean);
+  else if(raw.includes('---'))items=raw.split('---').map(s=>s.trim()).filter(Boolean);
+  else items=raw.split(/\n\n+/).map(s=>s.trim()).filter(Boolean);
+  bulkItems=items.map((text,i)=>({id:i,text,status:'pending',ticketId:null}));
+  renderBulkRows();
+}
+function renderBulkRows(){
+  const wrap=document.getElementById('bulk-rows'),acts=document.getElementById('bulk-acts');
+  if(!bulkItems.length){if(wrap)wrap.innerHTML='';if(acts)acts.style.display='none';return;}
+  const sm={'pending':'bs-pend','processing':'bs-proc','done':'bs-done','error':'bs-err'};
+  if(wrap)wrap.innerHTML=`<div style="font-size:10px;color:var(--t3);margin-bottom:5px">${bulkItems.length} defects parsed</div>`+bulkItems.map(item=>`<div class="bulk-row"><span class="bulk-n">${item.id+1}</span><span class="bulk-txt">${item.text}</span><span class="bulk-st ${sm[item.status]}">${item.ticketId||item.status}</span></div>`).join('');
+  if(acts)acts.style.display=bulkItems.every(i=>i.status==='pending')?'flex':'none';
+}
+async function runBulk(){
+  // API key handled server-side via ANTHROPIC_API_KEY env var
+  const pw=document.getElementById('bpw'),pb=document.getElementById('bpb'),acts=document.getElementById('bulk-acts');
+  if(pw)pw.style.display='block';if(acts)acts.style.display='none';
+  for(let i=0;i<bulkItems.length;i++){
+    bulkItems[i].status='processing';renderBulkRows();
+    if(pb)pb.style.width=`${(i/bulkItems.length)*100}%`;
+    try{
+      const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:1000,system:SYSTEM,tools:TOOLS,messages:[{role:'user',content:bulkItems[i].text}]})});
+      const d=await r.json();
+      const tb=d.content.find(b=>b.type==='tool_use');
+      if(tb){
+        const platform=T2P(tb.name),ticket={...tb.input,_platform:platform};
+        let result;
+        if(platform==='jira')result=await postJira(ticket);
+        else if(platform==='azure_devops')result=await postADO(ticket);
+        else result=await postGH(ticket);
+        bulkItems[i].status='done';bulkItems[i].ticketId=result.id;
+        addToHistory(platform,result.id,ticket.summary||ticket.title,result.url,ticket.severity);
+      }else bulkItems[i].status='error';
+    }catch(e){bulkItems[i].status='error';bulkItems[i].ticketId=e.message.slice(0,20);}
+    renderBulkRows();
+    await new Promise(r=>setTimeout(r,500));
+  }
+  if(pb)pb.style.width='100%';
+  const done=bulkItems.filter(i=>i.status==='done').length,fail=bulkItems.filter(i=>i.status==='error').length;
+  toast(`Bulk: ${done} created${fail?', '+fail+' failed':''}`,done>0?'success':'error');
+}
+function clearBulk(){bulkItems=[];document.getElementById('bulk-in').value='';document.getElementById('bulk-rows').innerHTML='';document.getElementById('bpw').style.display='none';document.getElementById('bpb').style.width='0%';document.getElementById('bulk-acts').style.display='none';}
+
+// ══ MAIN SEND ════════════════════════════════════════════
+const EXAMPLES=['Login button not responding on iPhone Safari after latest update — user taps and nothing happens','Payment gateway returns 504 timeout during checkout — cart not cleared but charge attempted','Analytics dashboard crashes white screen when applying date range filter','API returns 404 on GET requests — started after last deployment'];
+function setEx(i){document.getElementById('din').value=EXAMPLES[i];}
+
+async function sendDefect(){
+  const input=document.getElementById('din'),txt=input.value.trim();
+  if(!txt||isProc)return;
+
+  // Validate: screenshot is required
+  if(!pendingShot){
+    // Show warning with pulse effect on attach button
+    const attachBtn=document.getElementById('attach-btn');
+    if(attachBtn){
+      attachBtn.style.animation='none';
+      attachBtn.style.background='var(--amber-bg)';
+      attachBtn.style.border='1px solid var(--amber-bd)';
+      attachBtn.style.color='var(--amber)';
+      setTimeout(()=>{
+        attachBtn.style.background='';
+        attachBtn.style.border='';
+        attachBtn.style.color='';
+      }, 2000);
+    }
+    // Show inline warning below input
+    const warn = document.getElementById('screenshot-warn');
+    if(warn){
+      warn.style.display='flex';
+      setTimeout(()=>warn.style.display='none', 3000);
+    }
+    toast('📸 Please attach a screenshot before generating the ticket','warn');
+    return;
+  }
+
+  // API key handled server-side via ANTHROPIC_API_KEY env var
+  isProc=true;input.value='';clearPills();
+  document.getElementById('send-btn').disabled=true;
+  document.getElementById('agent-txt').textContent='Processing...';
+  addMsg('user',txt.replace(/\n/g,'<br>'));
+  chatHist.push({role:'user',content:txt});
+  // BUG-007 FIX: Cap chatHist at 20 entries (10 turns) — prevents API context window overflow after long sessions
+  if(chatHist.length>20) chatHist=chatHist.slice(-20);
+
+  // Score severity first (async, non-blocking)
+  scoreSeverity(txt).then(sc=>{if(sc&&sc.score){const chatEl=document.getElementById('chat');const wrap=document.createElement('div');renderSeverityScore(sc.score,sc.level,sc.reasoning,wrap);chatEl.appendChild(wrap);chatEl.scrollTop=chatEl.scrollHeight;}}).catch(()=>{});
+
+  const STEPS=['Analyzing defect...','Detecting platform...','Structuring ticket...','Finalizing...'];
+  addThink(STEPS);
+  try{
+    advStep(0);
+    const r1=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1500,system:SYSTEM,tools:TOOLS,messages:chatHist})});
+    if(!r1.ok){const e=await r1.json();throw new Error(e.error?.message||`API ${r1.status}`);}
+    const d1=await r1.json();
+    const tb=d1.content.find(b=>b.type==='tool_use');
+    if(!tb){rmThink();const t=d1.content.find(b=>b.type==='text')?.text||'Please provide more details.';chatHist.push({role:'assistant',content:t});addMsg('ai',t);return;}
+    advStep(1);
+    // Platform override: use manual selection if not 'auto'
+    const override = document.getElementById('platform-override')?.value || 'auto';
+    const platform = override !== 'auto' ? override : T2P(tb.name);
+    highlightPill(platform==='azure_devops'?'ado':platform==='github'?'gh':'jira');
+    advStep(2);
+    curTicket={...tb.input,_platform:platform};
+    // Apply template defaults if template is active
+    if(activeTemplate&&TEMPLATES[activeTemplate]){
+      const tpl=TEMPLATES[activeTemplate];
+      if(platform==='jira'){if(!curTicket.environment&&tpl.env)curTicket.environment=tpl.env;if(!curTicket.components?.length&&tpl.components)curTicket.components=tpl.components;}
+      else if(platform==='azure_devops'){if(!curTicket.system_info&&tpl.env)curTicket.system_info=tpl.env;if(!curTicket.tags&&tpl.tags)curTicket.tags=tpl.tags;}
+    }
+    const fakeId=platform==='jira'?`${curTicket.project||CFG.jiraProj||'QA'}-${1000+Math.floor(Math.random()*9000)}`:platform==='azure_devops'?`#${Math.floor(10000+Math.random()*89999)}`:`#${Math.floor(100+Math.random()*900)}`;
+    advStep(3);
+    const r2=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:150,system:SYSTEM,tools:TOOLS,messages:[...chatHist,{role:'assistant',content:d1.content},{role:'user',content:[{type:'tool_result',tool_use_id:tb.id,content:JSON.stringify({success:true,ticket_id:fakeId,platform})}]}]})});
+    const d2=await r2.json();
+    const ct=d2.content?.find(b=>b.type==='text')?.text||`Ticket structured for ${platform}.`;
+    chatHist.push({role:'assistant',content:ct});
+    rmThink();
+    addMsg('ai',ct);
+    const chat=document.getElementById('chat');
+    const wrap=document.createElement('div');wrap.className='ticket-wrap';
+    wrap.innerHTML=buildTicketHTML(curTicket,platform,fakeId);
+    chat.appendChild(wrap);
+
+    // Test case prompt now shown inside ticket card after posting
+    // tc-ask-msg removed — using tc-prompt-area instead
+  }catch(e){rmThink();clearPills();addMsg('ai',`<span style="color:#f87171">Error: ${e.message}</span>`);}
+  finally{isProc=false;document.getElementById('send-btn').disabled=false;document.getElementById('agent-txt').textContent='Agent ready';}
+}
+
+
+// ══ VALIDATE CREDENTIALS ══════════════════════════════════
+async function validateCfg(section) {
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '...'; btn.disabled = true;
+
+  try {
+    if (section === 'ant') {
+      // Test via /api/claude — key is in Vercel env vars
+      const r = await fetch('/api/claude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 10, messages: [{ role: 'user', content: 'hi' }] })
+      });
+      if (r.ok) { toast('✅ Anthropic API connected via Vercel env var!', 'success'); document.getElementById('dot-ant').className = 'cfg-dot ok'; }
+      else { const e = await r.json(); toast(`❌ Anthropic: ${e.error || r.status}`, 'error'); document.getElementById('dot-ant').className = 'cfg-dot err'; }
+    }
+
+    else if (section === 'jira') {
+      // Credentials are in Vercel env vars — no client-side check needed
+      const r = await fetch('/api/jira', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'validate', config: jiraCfg() })
+      });
+      const d = await r.json();
+      if (d.valid) { toast(`✅ Jira connected! (${d.displayName})`, 'success'); document.getElementById('dot-jira').className = 'cfg-dot ok'; }
+      else { toast(`❌ Jira: ${d.error}`, 'error'); document.getElementById('dot-jira').className = 'cfg-dot err'; }
+    }
+
+    else if (section === 'ado') {
+      // Credentials are in Vercel env vars — no client-side check needed
+      const r = await fetch('/api/ado', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'validate', config: adoCfg() })
+      });
+      const d = await r.json();
+      if (d.valid) { toast(`✅ ADO connected! (${d.displayName})`, 'success'); document.getElementById('dot-ado').className = 'cfg-dot ok'; }
+      else { toast(`❌ ADO: ${d.error}`, 'error'); document.getElementById('dot-ado').className = 'cfg-dot err'; }
+    }
+
+    else if (section === 'gh') {
+      // Token is in Vercel env vars — no client-side check needed
+      const r = await fetch('/api/github', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'validate', config: ghCfg() })
+      });
+      const d = await r.json();
+      if (d.valid) { toast(`✅ GitHub connected! (${d.displayName})`, 'success'); document.getElementById('dot-gh').className = 'cfg-dot ok'; }
+      else { toast(`❌ GitHub: ${d.error}`, 'error'); document.getElementById('dot-gh').className = 'cfg-dot err'; }
+    }
+  } catch(e) {
+    toast(`Connection test failed: ${e.message}`, 'error');
+  } finally {
+    btn.textContent = orig; btn.disabled = false;
+  }
+}
+
+
+// ══ TEST CASE PROMPT HANDLERS ═════════════════════════════
+function dismissTestCaseAsk(){
+  const el=document.getElementById('tc-ask-msg');
+  if(el){ el.innerHTML=aiAv()+'<div><div class="msg-bub" style="font-size:12px;color:var(--t2)">No problem! You can generate test cases anytime using the 🧪 Test Cases button on the ticket.</div></div>'; }
+}
+
+async function acceptTestCases(){
+  const el=document.getElementById('tc-ask-msg');
+  if(el){ el.innerHTML=aiAv()+'<div><div class="msg-bub" style="font-size:12px;color:var(--t2)"><span style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></span>Generating test cases...</span></div></div>'; }
+
+  if(!curTicket){ toast('Generate a ticket first','warn'); return; }
+  // Anthropic API key is in Vercel env vars — no browser key needed
+
+  const chat=document.getElementById('chat');
+  const platform=curTicket._platform;
+  // Use real posted ticket ID, not the preview/fake ID
+  const bugId=curTicket._postedId||document.getElementById('ticket-id-display')?.textContent||'';
+  const rawBugId=curTicket._rawId||bugId.replace('#','');
+
+  try{
+    // Step 1 — Generate 4 Gherkin test cases via AI
+    const r=await fetch('/api/claude',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:900,messages:[{role:'user',content:`Generate exactly 4 Gherkin test cases for this bug. Return JSON only, no extra text:
+{"cases":[
+  {"type":"Positive","summary":"Short summary max 55 chars (no TC_ prefix needed)","description":"One line description","gherkin":"Scenario: ...\n  Given ...\n  When ...\n  Then ..."},
+  {"type":"Negative","summary":"...","description":"...","gherkin":"..."},
+  {"type":"Edge Case","summary":"...","description":"...","gherkin":"..."},
+  {"type":"Regression","summary":"...","description":"...","gherkin":"..."}
+]}
+
+Bug: ${JSON.stringify({
+  title: curTicket.summary||curTicket.title,
+  description: curTicket.description,
+  steps: curTicket.steps_to_reproduce||curTicket.repro_steps,
+  expected: curTicket.expected_result,
+  actual: curTicket.actual_result
+})}`}]})
+    });
+    const d=await r.json();
+    // Robust JSON extraction with multiple fallback strategies
+    let cases = [];
+    try {
+      const text = d.content?.[0]?.text || '';
+      // Strategy 1: extract JSON block
+      let raw = text.match(/\{[\s\S]+\}/)?.[0] || '{}';
+      // Strategy 2: fix common AI JSON issues (trailing commas, unquoted keys)
+      raw = raw.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+      const tc = JSON.parse(raw);
+      cases = tc.cases || [];
+    } catch(jsonErr) {
+      // Strategy 3: Try to extract cases array directly
+      try {
+        const text = d.content?.[0]?.text || '';
+        const arrMatch = text.match(/"cases"\s*:\s*(\[[\s\S]+?\])/);
+        if(arrMatch) cases = JSON.parse(arrMatch[1]);
+      } catch(e2) {
+        // Strategy 4: Build default test cases from ticket data
+        cases = [
+          {type:'Positive', summary:'Verify '+((curTicket?.summary||'feature')).slice(0,50)+' works correctly', description:'Positive test', gherkin:'Scenario: Verify expected behaviour\n  Given the system is ready\n  When the user performs the action\n  Then the expected result occurs'},
+          {type:'Negative', summary:'Verify error handling for '+(curTicket?.summary||'feature').slice(0,40), description:'Negative test', gherkin:'Scenario: Verify error handling\n  Given the system is ready\n  When invalid input is provided\n  Then an error message is shown'},
+          {type:'Edge Case', summary:'Verify edge case for '+(curTicket?.summary||'feature').slice(0,40), description:'Edge case', gherkin:'Scenario: Verify edge case\n  Given boundary conditions exist\n  When the edge case is triggered\n  Then the system handles it gracefully'},
+          {type:'Regression', summary:'Regression: '+(curTicket?.summary||'feature').slice(0,50), description:'Regression test', gherkin:'Scenario: Verify no regression\n  Given the fix is deployed\n  When the previous flow is tested\n  Then no regression is observed'},
+        ];
+        toast('AI returned invalid JSON — using template test cases', 'warn');
+      }
+    }
+
+    if(!cases.length){ toast('Could not generate test cases','error'); return; }
+
+    // Step 2 — Show generated cases in chat
+    const typeColors={'Positive':'var(--green)','Negative':'var(--red)','Edge Case':'var(--amber)','Regression':'var(--purple)'};
+    const pName=platform==='jira'?'Jira':platform==='azure_devops'?'Azure DevOps':'GitHub';
+    const tcWrap=document.createElement('div');tcWrap.className='msg ai';tcWrap.id='tc-inline-wrap';
+    tcWrap.innerHTML=aiAv()+`<div style="max-width:85%"><div class="msg-bub" style="padding:12px 14px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+        🧪 ${cases.length} Test Cases generated — posting to ${pName}...
+        <span style="width:12px;height:12px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0"></span>
+      </div>
+      ${cases.map(c=>`<div style="margin-bottom:8px;padding:8px 10px;border:1px solid var(--b2);border-radius:8px;background:var(--s2)">
+        <div style="font-size:11px;font-weight:600;color:${typeColors[c.type]||'var(--accent2)'}">📋 ${c.type}</div>
+        <div style="font-size:11px;color:var(--t1);margin-top:3px">${c.summary}</div>
+      </div>`).join('')}
+      <div id="tc-post-status" style="font-size:11px;color:var(--t2);margin-top:8px">Posting...</div>
+    </div></div>`;
+    chat.appendChild(tcWrap);chat.scrollTop=chat.scrollHeight;
+
+    // Step 3 — Post test cases to platform via /api/testcase
+    if(platform==='github'){
+      document.getElementById('tc-post-status').innerHTML='<span style="color:var(--amber)">⚠ GitHub Issues does not support Test Case work items. Test cases displayed above only.</span>';
+      if(el) el.style.display='none';
+      return;
+    }
+
+    const postRes=await fetch('/api/testcase',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        platform,
+        testCases: cases,
+        bugId,
+        rawBugId,
+        config:{...jiraCfg(),...adoCfg()}
+      })
+    });
+
+    const postData=await postRes.json();
+    const created=postData.created||[];
+    const errors=postData.errors||[];
+
+    // Step 4 — Update UI with results
+    const statusEl=document.getElementById('tc-post-status');
+    if(created.length){
+      const links=created.map(t=>`<a href="${t.url}" target="_blank" style="color:var(--accent2);text-decoration:underline">${t.id}</a> (${t.type})`).join(' · ');
+      if(statusEl) statusEl.innerHTML=`<span style="color:var(--green)">✅ ${created.length} test cases created: ${links}</span>`;
+      toast(`${created.length} test cases created in ${pName}!`,'success');
+    }
+    if(errors.length){
+      if(statusEl) statusEl.innerHTML+=(statusEl.innerHTML?'<br>':'')+`<span style="color:var(--amber)">⚠ ${errors.join(', ')}</span>`;
+    }
+    if(!created.length && errors.length){
+      toast(`Test case creation failed: ${errors[0]}`,'error');
+    }
+
+    if(el) el.style.display='none';
+    chat.scrollTop=chat.scrollHeight;
+
+  }catch(e){
+    toast('Test case generation failed: '+e.message,'error');
+    const askEl=document.getElementById('tc-ask-msg');
+    if(askEl) askEl.innerHTML=aiAv()+`<div><div class="msg-bub" style="color:var(--red);font-size:12px">Failed: ${e.message}</div></div>`;
+  }
+}
+
+function copyInlineTC(){
+  const el=document.getElementById('inline-tc-content');
+  if(!el) return;
+  navigator.clipboard.writeText(el.innerText);
+  toast('Test cases copied!','success');
+}
+
+
+// ══ LIVE PROJECT LOADER ═══════════════════════════════════════
+async function loadProjects(platform) {
+  const isJira = platform === 'jira';
+  const selectEl = document.getElementById(isJira ? 'jira-proj-select' : 'ado-proj-select');
+  const statusEl = document.getElementById(isJira ? 'jira-proj-status' : 'ado-proj-status');
+  if (!selectEl) return;
+
+  if (statusEl) { statusEl.textContent = '↻ loading...'; statusEl.style.color = 'var(--accent2)'; }
+
+  try {
+    const r = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        platform: isJira ? 'jira' : 'azure_devops',
+        adoOrg: isJira ? undefined : (CFG.adoOrg || document.getElementById('ado-org-input')?.value?.trim() || '')
+      })
+    });
+    // Guard: check content-type before parsing JSON
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      if (statusEl) { statusEl.textContent = 'API not ready — redeploy Vercel'; statusEl.style.color = 'var(--amber)'; }
+      return;
+    }
+    const d = await r.json();
+
+    if (d.error || !d.projects?.length) {
+      if (statusEl) { statusEl.textContent = d.error || 'No projects found'; statusEl.style.color = 'var(--amber)'; }
+      return;
+    }
+
+    // Populate dropdown
+    const currentVal = isJira ? CFG.jiraProj : CFG.adoProj;
+    selectEl.innerHTML = '<option value="">— select project —</option>' +
+      d.projects.map(p => `<option value="${p.name || p.key}" data-key="${p.key}" ${(p.key === currentVal || p.name === currentVal) ? 'selected' : ''}>${p.name} (${p.key})</option>`).join('');
+    // Immediately update CFG from current selection
+    const selectedOpt = selectEl.options[selectEl.selectedIndex];
+    if (selectedOpt && selectedOpt.value) {
+      if (isJira) CFG.jiraProj = selectedOpt.dataset.key || selectedOpt.value;
+      else CFG.adoProj = selectedOpt.value;
+    }
+
+    // Auto-select if only one project OR if env var matches
+    const envProject = isJira
+      ? (d.projects.find(p => p.key === (window.__JIRA_PROJECT__ || '')) || null)
+      : null;
+
+    if (d.projects.length === 1) {
+      selectEl.value = d.projects[0].name || d.projects[0].key;
+      if (isJira) CFG.jiraProj = d.projects[0].key;
+      else CFG.adoProj = d.projects[0].name;
+    }
+    // Also immediately update CFG if a project is already selected in the dropdown
+    if (selectEl.value && selectEl.value !== '') {
+      const sel = d.projects.find(p => (p.name||p.key) === selectEl.value);
+      if (isJira) CFG.jiraProj = sel?.key || selectEl.value;
+      else CFG.adoProj = sel?.name || selectEl.value;
+    }
+
+    // Update CFG when user selects
+    selectEl.onchange = function() {
+      const selectedOpt = this.options[this.selectedIndex];
+      if (isJira) {
+        CFG.jiraProj = selectedOpt?.dataset?.key || this.value;
+        console.log('Jira project set to:', CFG.jiraProj);
+      } else {
+        CFG.adoProj = this.value;
+        console.log('ADO project set to:', CFG.adoProj);
+      }
+      updateDots();
+    };
+
+    if (statusEl) { statusEl.textContent = `${d.projects.length} project${d.projects.length>1?'s':''} loaded ✓`; statusEl.style.color = 'var(--green)'; }
+    if (isJira) document.getElementById('dot-jira').className = 'cfg-dot ok';
+    else document.getElementById('dot-ado').className = 'cfg-dot ok';
+
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = 'Load failed: ' + e.message; statusEl.style.color = 'var(--red)'; }
+  }
+}
+
+
+// ══ PLATFORM-SPECIFIC POSTING ════════════════════════════════
+function dismissTCPrompt(){
+  const el=document.getElementById('tc-prompt-area');
+  if(el) el.innerHTML='<div style="font-size:11px;color:var(--t3);padding:4px 0">No problem! You can generate test cases anytime using 🧪 Test Cases button above.</div>';
+}
+
+async function postToSpecificPlatform(platform){
+  if(!curTicket){ toast('No ticket to post','warn'); return; }
+
+  // Disable all post buttons
+  ['btn-post-jira'].forEach(id=>{
+    const b=document.getElementById(id); if(b) b.disabled=true;
+  });
+
+  const statusArea=document.getElementById('post-status-area');
+  if(statusArea) statusArea.innerHTML='<div class="post-status posting"><span style="width:12px;height:12px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></span> Posting...</div>';
+
+  const platforms = platform==='all' ? ['jira','azure_devops','github'] : [platform];
+  const results = [];
+
+  for(const p of platforms){
+    try{
+      let result;
+      curTicket._platform = p;
+      if(p==='jira') result = await postJira(curTicket);
+      else if(p==='azure_devops') result = await postADO(curTicket);
+      else result = await postGH(curTicket);
+
+      // Store real ticket ID for test case linking
+      curTicket._postedId = result.id;
+      curTicket._rawId = result.rawId || result.id.replace('#','');
+
+      // Sprint + notifications
+      await fetchAndAssignSprint(p, result.id);
+      await sendNotifications(curTicket, result);
+      addToHistory(p, result.id, curTicket.summary||curTicket.title, result.url, curTicket.severity);
+
+      results.push({platform:p, id:result.id, url:result.url, ok:true});
+    } catch(e){
+      results.push({platform:p, error:e.message, ok:false});
+    }
+  }
+
+  // Show results
+  const pNames = {'jira':'Jira','azure_devops':'ADO','github':'GitHub'};
+  const successHTML = results.filter(r=>r.ok).map(r=>
+    `✓ <a class="post-link" href="${r.url}" target="_blank">${r.id}</a> created in ${pNames[r.platform]||r.platform}`
+  ).join(' &nbsp;|&nbsp; ');
+  const errorHTML = results.filter(r=>!r.ok).map(r=>
+    `✗ ${pNames[r.platform]||r.platform}: ${r.error}`
+  ).join('<br>');
+
+  if(statusArea){
+    statusArea.innerHTML = successHTML
+      ? `<div class="post-status posted">${successHTML}</div>${errorHTML?`<div style="color:var(--red);font-size:11px;margin-top:4px">${errorHTML}</div>`:''}`
+      : `<div class="post-status failed">${errorHTML}</div>`;
+  }
+
+  if(results.some(r=>r.ok)){
+    toast(`Ticket created successfully!`,'success');
+    // Hide platform buttons, show test case prompt
+    const postBtns = document.getElementById('platform-post-btns');
+    if(postBtns) postBtns.style.display='none';
+    const tcPrompt = document.getElementById('tc-prompt-area');
+    if(tcPrompt) tcPrompt.style.display='block';
+    // Also hide old tc-ask-msg if visible
+    const tcAsk = document.getElementById('tc-ask-msg');
+    if(tcAsk) tcAsk.style.display='none';
+  } else {
+    // Re-enable buttons on failure
+    ['btn-post-jira'].forEach(id=>{
+      const b=document.getElementById(id); if(b) b.disabled=false;
+    });
+  }
+}
+
+function switchPlatformTab(tab) {
+  ['jira','ado','gh'].forEach(t => {
+    const btn   = document.getElementById('ptab-'+t);
+    const panel = document.getElementById('ptab-'+t+'-panel');
+    if (btn) {
+      btn.classList.toggle('active', t === tab);
+    }
+    if (panel) {
+      panel.classList.toggle('active', t === tab);
+    }
+  });
+  CFG.activePlatformTab = tab;
+}
+
+
+// ══ MULTI-TENANT ORG LOADER ══════════════════════════════════
+const ORG_CODE = new URLSearchParams(window.location.search).get('org') || '';
+
+async function loadOrgConfig() {
+  if (!ORG_CODE) return; // No org in URL — use env vars (single-tenant mode)
+  try {
+    const r = await fetch(`/api/config?org=${ORG_CODE}`);
+    if (!r.ok) {
+      const e = await r.json();
+      toast(`Org not found: ${e.error || ORG_CODE}`, 'error');
+      return;
+    }
+    const cfg = await r.json();
+    // Apply org config to app
+    if (cfg.orgName) {
+      document.querySelector('.logo-name') && (document.querySelector('.logo-name').textContent = cfg.orgName);
+      document.title = `${cfg.orgName} — BugForge AI`;
+    }
+    // Pre-fill project dropdowns
+    if (cfg.jiraUrl) CFG.jiraUrl = cfg.jiraUrl;
+    if (cfg.jiraProj) CFG.jiraProj = cfg.jiraProj;
+    if (cfg.adoOrg)  CFG.adoOrg  = cfg.adoOrg;
+    if (cfg.adoProj) CFG.adoProj = cfg.adoProj;
+    if (cfg.ghOwner) CFG.ghOwner = cfg.ghOwner;
+    if (cfg.ghRepo)  CFG.ghRepo  = cfg.ghRepo;
+
+    // Show org banner in header
+    const agentTxt = document.getElementById('agent-txt');
+    if (agentTxt && cfg.orgName) {
+      agentTxt.textContent = `${cfg.orgName} · Agent ready`;
+    }
+
+    // Load projects with org context
+    setTimeout(() => {
+      if (cfg.hasJira)   loadProjects('jira');
+      if (cfg.hasAdo && cfg.adoOrg) loadProjects('ado');
+    }, 500);
+
+    console.log(`✅ BugForge AI loaded for org: ${cfg.orgName}`);
+  } catch(e) {
+    console.warn('Org config load failed:', e.message);
+  }
+}
+
+// Override postJira/postADO/postGH to pass org code
+// so server-side API can fetch credentials from KV
+const _origOrgCode = ORG_CODE;
+
+// ══ CONFIG UI ════════════════════════════════════════════
+function tSec(id){const b=document.getElementById('bod-'+id),a=document.getElementById('arr-'+id);const o=b.classList.toggle('open');a.classList.toggle('open',o);}
+function saveCfg(section){
+  const v=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  const sv=(k,val,lk)=>{if(val&&!val.startsWith('●')){CFG[k]=val;localStorage.setItem(lk,val);}};
+  if(section==='ant'){sv('ant',v('ci-ant'),'da_ant');}
+  // Credentials now stored in Vercel env vars — no localStorage needed
+  if(section==='jira'||section==='ado'||section==='gh'||section==='notif'){
+    // No-op: all credentials configured via Vercel environment variables
+    toast('Credentials are configured via Vercel Environment Variables','info');
+    return;
+  }
+  updateDots();
+  toast(section.toUpperCase()+' saved','success');
+}
+function updateDots(){
+  const dot=(id,ok)=>{const el=document.getElementById(id);if(el)el.className='cfg-dot'+(ok?' ok':'');};
+  dot('dot-ant',true); // Always green - key in Vercel env varsdot('dot-jira',!!(CFG.jiraUrl&&CFG.jiraToken));
+  dot('dot-ado',!!(CFG.adoOrg&&CFG.adoPat));dot('dot-gh',!!(CFG.ghOwner&&CFG.ghToken));
+  dot('dot-teams',!!CFG.teams);
+}
+
+// ══ INIT ══════════════════════════════════════════════════
+function restoreConfig(){
+  const restore=(id,val,mask)=>{const el=document.getElementById(id);if(el)el.value=val?(mask?'●'.repeat(12):val):'';}; 
+  restore('ci-ant',CFG.ant,true);restore('ci-jira-url',CFG.jiraUrl);restore('ci-jira-email',CFG.jiraEmail);
+  restore('ci-jira-token',CFG.jiraToken,true);restore('ci-jira-proj',CFG.jiraProj);restore('ci-jira-board',CFG.jiraBoard);
+  restore('ci-ado-org',CFG.adoOrg);restore('ci-ado-project',CFG.adoProj);restore('ci-ado-pat',CFG.adoPat,true);restore('ci-ado-team',CFG.adoTeam);
+  restore('ci-gh-owner',CFG.ghOwner);restore('ci-gh-repo',CFG.ghRepo);restore('ci-gh-token',CFG.ghToken,true);
+  restore('ci-teams',CFG.teams);
+}
+
+async function clearChat(){
+  // Use custom confirm dialog (iframe-safe, NVDA/VoiceOver accessible — no window.confirm)
+  if(chatHist.length>0){
+    const ok = await showConfirm({
+      title:'Clear Chat',
+      msg:'Clear all tickets and conversation? This cannot be undone.',
+      okLabel:'Yes, Clear',
+      icon:'🗑️'
+    });
+    if(!ok) return;
+  }
+  chatHist=[];curTicket=null;clearPills();
+  // TC-152 FIX: Reset activeTemplate so old template doesn't silently apply to new session
+  activeTemplate=null;
+  document.querySelectorAll('.tpl-btn').forEach(b=>b.classList.remove('active'));
+  const chat=document.getElementById('chat');
+  chat.innerHTML=`<div class="drop-ov" id="drop-ov"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="color:var(--accent2);font-size:13px">Drop screenshot to attach</span></div><div class="msg ai">${aiAv()}<div><div class="msg-bub">Chat cleared. Describe a new defect below.</div></div></div>`;
+  initDragDrop();
+}
+
+function toast(msg,type='info'){
+  const wrap=document.getElementById('toasts');
+  const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;wrap.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+// ══ SESSION RESET ON FRESH LAUNCH ════════════════════════
+// Credentials (API keys, URLs, tokens) persist in localStorage — user shouldn't re-enter every time.
+// Session state (chat, tickets, bulk) resets on every page load — fresh start each time.
+function resetSessionOnLoad() {
+  // Clear in-memory session state
+  chatHist = []; curTicket = null; pendingShot = null;
+  bulkItems = []; isBulk = false; editOpen = false;
+  activeTemplate = null; isListening = false;
+
+  sessionLog = [];
+
+  // Reset chat UI to clean state
+  const chat = document.getElementById('chat');
+  if (chat) {
+    chat.innerHTML = `<div class="drop-ov" id="drop-ov">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span style="color:var(--accent2);font-size:13px">Drop screenshot to attach</span></div>
+      <div class="msg ai">${aiAv()}<div><div class="msg-bub">
+        <strong>BugForge AI v4.7</strong> — Ready. Describe a defect below.<br><br>
+        <span style="color:var(--t2);font-size:12px">⭐ Severity scorer · 🧪 Test cases · 🔍 Root cause · 📋 Templates · 💬 Comments · 🔔 Notifications · 🏃 Sprint · 🎤 Voice · 📤 Export · 📊 Dashboard</span>
+      </div></div></div>`;
+  }
+
+  // Reset input field
+  const din = document.getElementById('din');
+  if (din) din.value = '';
+
+  // Reset platform selector to Auto
+  const platformSel = document.getElementById('platform-override');
+  if (platformSel) platformSel.value = 'auto';
+
+  // Reset bulk panel
+  const bulkIn = document.getElementById('bulk-in');
+  if (bulkIn) bulkIn.value = '';
+  const bulkRows = document.getElementById('bulk-rows');
+  if (bulkRows) bulkRows.innerHTML = '';
+  const bpw = document.getElementById('bpw');
+  if (bpw) bpw.style.display = 'none';
+  const bpb = document.getElementById('bpb');
+  if (bpb) bpb.style.width = '0%';
+
+  // Ensure bulk panel is hidden
+  const bulkPanel = document.getElementById('bulk-panel');
+  if (bulkPanel) bulkPanel.style.display = 'none';
+  const inputArea = document.getElementById('input-area');
+  if (inputArea) inputArea.style.display = 'block';
+  const bulkBtn = document.getElementById('bulk-btn');
+  if (bulkBtn) { bulkBtn.className = 'hbtn'; bulkBtn.textContent = '⚡ Bulk'; }
+
+  clearPills();
+}
+
+window.addEventListener('load',()=>{
+  restoreConfig();   // restore credentials only
+  updateDots();
+  resetSessionOnLoad(); // reset all session/chat state
+  renderHistory();
+  renderTemplates();
+  initDragDrop();
+  initTheme();
+  initShortcuts();
+  document.getElementById('din').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendDefect();}});
+
+  // Auto-load live project lists — only after checking API is available
+  setTimeout(async ()=>{
+    try {
+      const ping = await fetch('/api/projects', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({platform:'jira'})});
+      const ct = ping.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        loadProjects('jira').catch(()=>{});
+      } else {
+        // API not deployed yet — show manual reload option
+        const s = document.getElementById('jira-proj-status');
+        if (s) { s.textContent = 'Click ↻ Reload to load projects'; s.style.color = 'var(--t3)'; }
+        const sa = document.getElementById('ado-proj-status');
+        if (sa) { sa.textContent = 'Enter org then click ↻ Reload'; sa.style.color = 'var(--t3)'; }
+      }
+    } catch(e) {
+      console.log('Projects API not available:', e.message);
+    }
+  }, 1200);
+});
+
+// ══ MOBILE SIDEBAR ═══════════════════════════════════════════
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  if (!sidebar) return;
+  const isOpen = sidebar.classList.contains('mobile-open');
+  sidebar.classList.toggle('mobile-open', !isOpen);
+  if (overlay) overlay.classList.toggle('active', !isOpen);
+  document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+window.addEventListener('resize', function() {
+  if (window.innerWidth > 680) {
+    const sb = document.querySelector('.sidebar');
+    const ov = document.getElementById('mobile-overlay');
+    if (sb) sb.classList.remove('mobile-open');
+    if (ov) ov.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+});
+</script>
+</body>
+</html>

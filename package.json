@@ -1,0 +1,29 @@
+{
+  "name": "bugforge-ai-jira",
+  "version": "4.5.0",
+  "description": "BugForge AI \u2014 Jira Edition with Teams notifications",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve public -l 3000",
+    "build": "echo 'Static site \u2014 no build step required'",
+    "deploy": "vercel --prod",
+    "preview": "vercel"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1",
+    "vercel": "^33.0.0"
+  },
+  "keywords": [
+    "qa",
+    "bug-tracker",
+    "jira",
+    "azure-devops",
+    "github-issues",
+    "ai",
+    "claude"
+  ],
+  "engines": {
+    "node": ">=18.x"
+  },
+  "type": "module"
+}
