@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#4f6ef7"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="BugForge AI"/><meta name="description" content="BugForge AI — Jira Edition · AI-powered defect ticket generator with Teams notifications"/>
+<meta name="apple-mobile-web-app-title" content="BugForge AI"/><meta name="description" content="BugForge AI — Jira Edition · AI-powered Jira defect agent with Teams notifications"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>BugForge AI — Jira Edition</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
@@ -533,7 +533,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-r
   <div class="sb-top">
     <div class="logo">
       <div class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 72 72"><defs><linearGradient id="lbf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4f6ef7"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="72" height="72" rx="16" fill="url(#lbf)"/><rect x="16" y="36" width="40" height="22" rx="5" fill="#fff" opacity=".9"/><rect x="22" y="27" width="28" height="13" rx="4" fill="#fff" opacity=".9"/><path d="M40 12 L32 28 L38 28 L30 48 L50 24 L42 24 Z" fill="url(#lbf)"/></svg></div>
-      <div><div class="logo-name">BugForge AI</div><div class="logo-sub">v4.7 · Jira Edition</div></div>
+      <div><div class="logo-name">BugForge AI</div><div class="logo-sub">v4.7 · Jira + Teams Edition</div></div>
     </div>
     <div class="ppills">
       <div class="ppill" id="pill-jira"><svg width="11" height="11" viewBox="0 0 32 32" fill="none"><path d="M16 2L2 17l14 13 14-13L16 2z" fill="#2d84ff"/><path d="M16 9.5L9.5 17 16 23l6.5-6L16 9.5z" fill="white"/></svg>Jira</div>
@@ -593,7 +593,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-r
   <div class="sb-sec"><div class="sec-hdr" role="button" tabindex="0" onclick="tSec('notif')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tSec('notif')}"><span class="sec-lbl">Notifications</span><span class="sec-arr open" id="arr-notif">▶</span></div>
   <div class="sec-body open" id="bod-notif">
     <div style="padding:4px 0 8px;font-size:11px;color:var(--green);display:flex;align-items:center;gap:6px">
-      <span class="cfg-dot ok" id="dot-teams"></span>Teams webhook secured via Vercel env vars
+      <span class="cfg-dot ok" id="dot-teams-main"></span>Teams webhook secured via Vercel
     </div>
     <div style="font-size:10px;color:var(--t3);line-height:1.7;margin-bottom:10px">
       Set these in <strong>Vercel → Settings → Environment Variables:</strong><br>
@@ -703,6 +703,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-r
       <div id="screenshot-warn" style="display:none;align-items:center;gap:8px;padding:6px 14px;background:var(--amber-bg);border-top:1px solid var(--amber-bd);font-size:11px;color:var(--amber)">
       <span>📸</span>
       <span>Screenshot required — paste (Ctrl+V) or click the 📎 button to attach</span>
+    </div>
+    <div id="screenshot-warn" style="display:none;align-items:center;gap:8px;padding:6px 14px;background:var(--amber-bg);border-top:1px solid var(--amber-bd);font-size:11px;color:var(--amber)">
+      <span>📸</span><span>Screenshot required — paste (Ctrl+V) or click 📎 to attach</span>
     </div>
     <div class="input-foot">
         <div class="ex-chips">
@@ -951,7 +954,7 @@ async function linkParent() {
   } catch(e) { toast(e.message,'error'); }
 }
 
-// ══ FEATURE 6: TEAMS NOTIFICATION ═════════════════════════
+// ══ FEATURE 6: TEAMS NOTIFICATION ══════════════════════════
 async function sendNotifications(ticket, result) {
   if(!CFG.teams) return;
   try {
@@ -1154,8 +1157,8 @@ QUALITY: [Module] summary max 80 chars, specific steps, severity Critical=crash/
 // ══ PLATFORM HELPERS ═════════════════════════════════════
 const T2P=n=>({create_jira_bug:'jira',create_azure_devops_bug:'azure_devops',create_github_issue:'github'}[n]||'jira');
 function sevClass(s){return{Critical:'sc','1 - Critical':'sc',High:'sh','2 - High':'sh',Medium:'sm','3 - Medium':'sm',Low:'sl','4 - Low':'sl'}[s]||'sm';}
-function highlightPill(p){['jira','ado','gh'].forEach(x=>document.getElementById('pill-'+x).className='ppill'+(x===p?' p-'+x:''));}
-function clearPills(){['jira','ado','gh'].forEach(x=>document.getElementById('pill-'+x).className='ppill');}
+function highlightPill(p){['jira'].forEach(x=>document.getElementById('pill-'+x)&&(document.getElementById('pill-'+x).className='ppill'+(x===p?' p-'+x:'')));}
+function clearPills(){['jira'].forEach(x=>document.getElementById('pill-'+x)&&(document.getElementById('pill-'+x).className='ppill'));}
 function platIcon(p,sz=16){
   if(p==='jira')return`<svg width="${sz}" height="${sz}" viewBox="0 0 32 32" fill="none"><path d="M16 2L2 17l14 13 14-13L16 2z" fill="#fff"/><path d="M16 9.5L9.5 17 16 23l6.5-6L16 9.5z" fill="#0052cc"/></svg>`;
   if(p==='azure_devops')return`<svg width="${sz}" height="${sz}" viewBox="0 0 32 32" fill="none"><path d="M27 6L20 2.5 10.5 10 4 13v7l4.5 1.5L20 29.5 27 26V6z" fill="white"/></svg>`;
@@ -1727,8 +1730,8 @@ async function validateCfg(section) {
         body: JSON.stringify({ action: 'validate', config: adoCfg() })
       });
       const d = await r.json();
-      if (d.valid) { toast(`✅ ADO connected! (${d.displayName})`, 'success'); document.getElementById('dot-ado').className = 'cfg-dot ok'; }
-      else { toast(`❌ ADO: ${d.error}`, 'error'); document.getElementById('dot-ado').className = 'cfg-dot err'; }
+      if (d.valid) { toast(`✅ ADO connected! (${d.displayName})`, 'success'); (document.getElementById('dot-ado')?.className && (document.getElementById('dot-ado').className = 'cfg-dot ok')); }
+      else { toast(`❌ ADO: ${d.error}`, 'error'); (document.getElementById('dot-ado')?.className && (document.getElementById('dot-ado').className = 'cfg-dot err')); }
     }
 
     else if (section === 'gh') {
@@ -1738,8 +1741,8 @@ async function validateCfg(section) {
         body: JSON.stringify({ action: 'validate', config: ghCfg() })
       });
       const d = await r.json();
-      if (d.valid) { toast(`✅ GitHub connected! (${d.displayName})`, 'success'); document.getElementById('dot-gh').className = 'cfg-dot ok'; }
-      else { toast(`❌ GitHub: ${d.error}`, 'error'); document.getElementById('dot-gh').className = 'cfg-dot err'; }
+      if (d.valid) { toast(`✅ GitHub connected! (${d.displayName})`, 'success'); document.getElementById('dot-gh') && (document.getElementById('dot-gh').className = 'cfg-dot ok'); }
+      else { toast(`❌ GitHub: ${d.error}`, 'error'); document.getElementById('dot-gh') && (document.getElementById('dot-gh').className = 'cfg-dot err'); }
     }
   } catch(e) {
     toast(`Connection test failed: ${e.message}`, 'error');
@@ -1966,7 +1969,7 @@ async function loadProjects(platform) {
 
     if (statusEl) { statusEl.textContent = `${d.projects.length} project${d.projects.length>1?'s':''} loaded ✓`; statusEl.style.color = 'var(--green)'; }
     if (isJira) document.getElementById('dot-jira').className = 'cfg-dot ok';
-    else document.getElementById('dot-ado').className = 'cfg-dot ok';
+    else (document.getElementById('dot-ado')?.className && (document.getElementById('dot-ado').className = 'cfg-dot ok'));
 
   } catch(e) {
     if (statusEl) { statusEl.textContent = 'Load failed: ' + e.message; statusEl.style.color = 'var(--red)'; }
@@ -2051,15 +2054,11 @@ async function postToSpecificPlatform(platform){
 }
 
 function switchPlatformTab(tab) {
-  ['jira','ado','gh'].forEach(t => {
+  ['jira'].forEach(t => {
     const btn   = document.getElementById('ptab-'+t);
     const panel = document.getElementById('ptab-'+t+'-panel');
-    if (btn) {
-      btn.classList.toggle('active', t === tab);
-    }
-    if (panel) {
-      panel.classList.toggle('active', t === tab);
-    }
+    if (btn)   btn.classList.toggle('active', t === tab);
+    if (panel) panel.classList.toggle('active', t === tab);
   });
   CFG.activePlatformTab = tab;
 }
@@ -2130,9 +2129,9 @@ function saveCfg(section){
 }
 function updateDots(){
   const dot=(id,ok)=>{const el=document.getElementById(id);if(el)el.className='cfg-dot'+(ok?' ok':'');};
-  dot('dot-ant',true); // Always green - key in Vercel env varsdot('dot-jira',!!(CFG.jiraUrl&&CFG.jiraToken));
-  dot('dot-ado',!!(CFG.adoOrg&&CFG.adoPat));dot('dot-gh',!!(CFG.ghOwner&&CFG.ghToken));
-  dot('dot-teams',!!CFG.teams);
+  dot('dot-ant',  true);
+  dot('dot-jira', !!(CFG.jiraUrl && CFG.jiraToken));
+  dot('dot-teams', !!CFG.teams);
 }
 
 // ══ INIT ══════════════════════════════════════════════════
