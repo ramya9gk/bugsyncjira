@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Privacy — Bug Sync</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;color:#0f172a;line-height:1.6;background:#f8fafc}
+  h1{font-size:24px;margin-bottom:8px}
+  h2{font-size:16px;margin-top:24px;margin-bottom:8px;color:#475569}
+  p,li{font-size:14px;color:#334155}
+  .meta{color:#64748b;font-size:12px;margin-bottom:24px}
+  code{background:#e2e8f0;padding:2px 6px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<h1>Bug Sync — Privacy Policy</h1>
+<p class="meta">Last updated: April 2026</p>
+
+<h2>What data Bug Sync handles</h2>
+<p>When you use Bug Sync, the following data is processed:</p>
+<ul>
+  <li><strong>Bug descriptions</strong> you type are sent to the Anthropic Claude API for ticket generation.</li>
+  <li><strong>Screenshots</strong> you attach are sent to the Anthropic Claude API for analysis.</li>
+  <li><strong>Generated tickets</strong> are posted to your Jira instance when you click Post to Jira.</li>
+  <li><strong>Notifications</strong> are sent to your Microsoft Teams channel via webhook when configured.</li>
+</ul>
+
+<h2>What Bug Sync does NOT do</h2>
+<ul>
+  <li>No data is stored on Bug Sync servers. Each session is ephemeral — when you close the tab, the data is gone.</li>
+  <li>No tracking, analytics, or third-party advertising.</li>
+  <li>No user accounts, no persistent cookies, no session identifiers.</li>
+  <li>Credentials (Anthropic API key, Jira token, Teams webhook URL) are stored as Vercel environment variables, never exposed to the browser.</li>
+</ul>
+
+<h2>Third-party services</h2>
+<p>Bug Sync relies on these services, each with their own privacy policies:</p>
+<ul>
+  <li><a href="https://www.anthropic.com/legal/privacy">Anthropic (Claude API)</a> — for AI ticket generation</li>
+  <li><a href="https://www.atlassian.com/legal/privacy-policy">Atlassian (Jira)</a> — for ticket posting</li>
+  <li><a href="https://privacy.microsoft.com/privacystatement">Microsoft (Teams)</a> — for notifications</li>
+  <li><a href="https://vercel.com/legal/privacy-policy">Vercel</a> — hosting provider</li>
+</ul>
+
+<h2>Contact</h2>
+<p>For privacy questions, contact the app owner through your organization's internal channels.</p>
+</body>
+</html>

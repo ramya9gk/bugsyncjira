@@ -789,6 +789,32 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <script>
     (function(){var t=localStorage.getItem('da_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
   </script>
+
+  <!-- ═══ TEAMS SDK INTEGRATION ═══ Only activates when app runs inside Microsoft Teams -->
+  <script src="https://res.cdn.office.net/teams-js/2.28.0/js/MicrosoftTeams.min.js"></script>
+  <script>
+  (async function initTeamsIntegration() {
+    if (typeof microsoftTeams === 'undefined') return;
+    if (window === window.parent) return; // not iframed, skip
+    try {
+      await microsoftTeams.app.initialize();
+      const ctx = await microsoftTeams.app.getContext();
+      const applyTheme = (teamsTheme) => {
+        const t = (teamsTheme === 'dark' || teamsTheme === 'contrast') ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        try { localStorage.setItem('da_theme', t); } catch(e) {}
+      };
+      applyTheme(ctx.app.theme);
+      microsoftTeams.app.registerOnThemeChangeHandler(applyTheme);
+      microsoftTeams.app.notifySuccess();
+      setTimeout(() => { const din = document.getElementById('din'); if (din) din.focus(); }, 200);
+      document.body.classList.add('in-teams');
+      console.log('[BugSync] Teams integration active. Theme:', ctx.app.theme);
+    } catch (err) {
+      console.warn('[BugSync] Teams SDK init failed, running standalone:', err);
+    }
+  })();
+  </script>
 </head>
 <body>
 <input type="file" id="file-input" accept="image/*"/>
