@@ -296,10 +296,10 @@ select.ef-in{cursor:pointer}
 .bulk-prog-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
 /* ── Input area ── */
 .input-area{padding:14px 20px 16px;border-top:2px solid var(--accent);background:var(--s1);flex-shrink:0;transition:background .3s}
-.input-box{background:var(--s2);border:1.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;transition:border-color .15s;box-shadow:0 2px 8px #00000020}
+.input-box{background:var(--s2);border:2px solid var(--accent);border-radius:var(--rl);overflow:hidden;transition:border-color .15s;box-shadow:0 4px 16px #4f6ef720}
 .input-box:focus-within{border-color:var(--accent)}
 .input-top{display:flex;align-items:flex-start}
-textarea#din{flex:1;background:transparent;border:none;outline:none;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--t1);font-family:'DM Sans',sans-serif;resize:none;min-height:90px;max-height:180px}
+textarea#din{flex:1;background:transparent;border:none;outline:none;padding:11px 13px;font-size:13px;line-height:1.6;color:var(--t1);font-family:'DM Sans',sans-serif;resize:none;min-height:120px;max-height:200px}
 textarea#din::placeholder{color:var(--t3)}
 .input-btns{display:flex;flex-direction:column;gap:4px;padding:10px 10px 0 0;flex-shrink:0}
 .iibtn{background:none;border:none;cursor:pointer;color:var(--t3);transition:color .15s;display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px}
@@ -462,6 +462,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-r
   </div>
 </div>
 
+<div id="mobile-overlay" class="mobile-overlay" onclick="toggleMobileSidebar(true)"></div>
 <div class="app">
 <!-- ══ SIDEBAR ══ -->
 <div class="sidebar">
@@ -621,17 +622,20 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-r
       </div>
     </div>
     <!-- Bug Description Label -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <div style="font-size:11px;font-weight:700;color:var(--t2);display:flex;align-items:center;gap:6px">
-        <span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block"></span>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--t1);display:flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;box-shadow:0 0 6px var(--accent)"></span>
         Bug Description
-        <span style="font-size:9px;font-weight:400;color:var(--t3)">(required)</span>
+        <span style="font-size:10px;font-weight:500;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:5px;padding:1px 7px">required</span>
       </div>
-      <div style="font-size:10px;color:var(--t3)">Enter ↵ to generate ticket</div>
+      <div style="font-size:10px;color:var(--t3);display:flex;align-items:center;gap:4px">
+        <kbd style="background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:1px 5px;font-size:9px;font-family:monospace">Enter</kbd>
+        to generate
+      </div>
     </div>
     <div class="input-box">
       <div class="input-top">
-        <textarea id="din" aria-label="Describe your defect" aria-multiline="true" placeholder="🐛 Describe your bug here...&#10;Example: Login button not responding on Android Chrome after OTP entry&#10;&#10;Be specific: include platform, browser, steps, what happened vs expected"></textarea>
+        <textarea id="din" aria-label="Describe your defect" aria-multiline="true" placeholder="🐛 Describe your bug here...&#10;&#10;Example: Login page crashes on Chrome v120 after entering OTP&#10;Include: platform, browser version, steps to reproduce, expected vs actual result"></textarea>
         <div class="input-btns">
           <button class="iibtn" id="voice-btn" onclick="toggleVoice()" title="Voice input (Ctrl+Shift+V)" aria-label="Voice input (Ctrl+Shift+V)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M5 10a7 7 0 0014 0M12 19v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -1088,6 +1092,10 @@ function exportPrint() {
   .bulk-bar button{font-size:10px;padding:4px 8px}
 }
 
+/* Hide FAB on mobile — full input already visible */
+@media(max-width:680px){
+  #fab-wrap{display:none !important}
+}
 /* ── Extra small phones: 380px ── */
 @media(max-width:380px){
   .main-hdr{padding:6px 10px}
@@ -1571,7 +1579,19 @@ function initDragDrop(){
     if(f.type.startsWith('image/')) handleShot(f);
     else toast(`"${f.name}" is not an image. Only JPG, PNG, GIF and WebP are supported.`,'warn');
   });
-  document.getElementById('file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)handleShot(f);e.target.value='';});
+  document.getElementById('file-input').addEventListener('change',e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  // If FAB panel is open, send to FAB; otherwise main app
+  const fabPanel = document.getElementById('fab-panel');
+  if(fabPanel && fabPanel.style.display !== 'none') {
+    const ext=f.type.split('/')[1]||'png';
+    fabSetShot(new File([f],`screenshot-${Date.now()}.${ext}`,{type:f.type}));
+  } else {
+    handleShot(f);
+  }
+  e.target.value='';
+});
 
   // ── Paste screenshot (Ctrl+V anywhere on page) ──────────────
   document.addEventListener('paste',e=>{
@@ -1819,27 +1839,9 @@ async function validateCfg(section) {
       else { toast(`❌ Jira: ${d.error}`, 'error'); document.getElementById('dot-jira').className = 'cfg-dot err'; }
     }
 
-    else if (section === 'ado') {
-      // Credentials are in Vercel env vars — no client-side check needed
-      const r = await fetch('/api/ado', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'validate', config: adoCfg() })
-      });
-      const d = await r.json();
-      if (d.valid) { toast(`✅ ADO connected! (${d.displayName})`, 'success'); (document.getElementById('dot-ado')?.className && (document.getElementById('dot-ado').className = 'cfg-dot ok')); }
-      else { toast(`❌ ADO: ${d.error}`, 'error'); (document.getElementById('dot-ado')?.className && (document.getElementById('dot-ado').className = 'cfg-dot err')); }
-    }
+    
 
-    else if (section === 'gh') {
-      // Token is in Vercel env vars — no client-side check needed
-      const r = await fetch('/api/github', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'validate', config: ghCfg() })
-      });
-      const d = await r.json();
-      if (d.valid) { toast(`✅ GitHub connected! (${d.displayName})`, 'success'); document.getElementById('dot-gh') && (document.getElementById('dot-gh').className = 'cfg-dot ok'); }
-      else { toast(`❌ GitHub: ${d.error}`, 'error'); document.getElementById('dot-gh') && (document.getElementById('dot-gh').className = 'cfg-dot err'); }
-    }
+    
   } catch(e) {
     toast(`Connection test failed: ${e.message}`, 'error');
   } finally {
@@ -2065,7 +2067,6 @@ async function loadProjects(platform) {
 
     if (statusEl) { statusEl.textContent = `${d.projects.length} project${d.projects.length>1?'s':''} loaded ✓`; statusEl.style.color = 'var(--green)'; }
     if (isJira) document.getElementById('dot-jira').className = 'cfg-dot ok';
-    else (document.getElementById('dot-ado')?.className && (document.getElementById('dot-ado').className = 'cfg-dot ok'));
 
   } catch(e) {
     if (statusEl) { statusEl.textContent = 'Load failed: ' + e.message; statusEl.style.color = 'var(--red)'; }
@@ -2346,6 +2347,244 @@ document.addEventListener('keydown', function(e) {
     }
   }
 });
+
+// ══ FLOATING BUG BUTTON (FAB) ════════════════════════════
+let fabSeverity = 'Medium';
+let fabShot = null;
+
+function fabOpen() {
+  document.getElementById('fab-panel').style.display = 'block';
+  document.getElementById('fab-btn').style.display = 'none';
+  setTimeout(() => document.getElementById('fab-din').focus(), 100);
+}
+
+function fabClose() {
+  document.getElementById('fab-panel').style.display = 'none';
+  document.getElementById('fab-btn').style.display = 'flex';
+}
+
+function fabSetSev(btn, sev) {
+  fabSeverity = sev;
+  document.querySelectorAll('.fab-sev-btn').forEach(b => {
+    b.style.opacity = '0.5';
+    b.style.fontWeight = '600';
+  });
+  btn.style.opacity = '1';
+  btn.style.fontWeight = '800';
+  btn.style.transform = 'scale(1.05)';
+  setTimeout(() => btn.style.transform = '', 150);
+}
+
+function fabClearShot() {
+  fabShot = null;
+  document.getElementById('fab-ss-preview').style.display = 'none';
+  document.getElementById('fab-ss-status').style.display = 'flex';
+}
+
+function fabSetShot(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    fabShot = { dataUrl: e.target.result, name: file.name, file };
+    const img = document.getElementById('fab-ss-img');
+    const name = document.getElementById('fab-ss-name');
+    if (img) img.src = e.target.result;
+    if (name) name.textContent = file.name;
+    document.getElementById('fab-ss-status').style.display = 'none';
+    document.getElementById('fab-ss-preview').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function fabGenerate() {
+  const txt = document.getElementById('fab-din').value.trim();
+  if (!txt) {
+    document.getElementById('fab-din').style.borderColor = '#ef4444';
+    document.getElementById('fab-din').placeholder = '⚠ Please describe the bug first...';
+    setTimeout(() => {
+      document.getElementById('fab-din').style.borderColor = '#ffffff18';
+      document.getElementById('fab-din').placeholder = '🐛 Describe your bug...';
+    }, 2000);
+    return;
+  }
+  if (!fabShot) {
+    document.getElementById('fab-ss-status').style.borderColor = '#ef4444';
+    setTimeout(() => document.getElementById('fab-ss-status').style.borderColor = '#4f6ef760', 2000);
+    toast('📸 Please attach a screenshot first', 'warn');
+    return;
+  }
+
+  // Transfer to main input
+  const mainInput = document.getElementById('din');
+  if (mainInput) {
+    // Add severity prefix if not Critical/Medium
+    const sevPrefix = fabSeverity !== 'Medium' ? `[${fabSeverity}] ` : '';
+    mainInput.value = sevPrefix + txt;
+    mainInput.dispatchEvent(new Event('input'));
+  }
+
+  // Transfer screenshot to main app
+  if (fabShot) {
+    pendingShot = fabShot;
+    const wrap = document.getElementById('ss-thumb');
+    if (wrap) {
+      wrap.innerHTML = `<div class="ss-thumb"><img src="${fabShot.dataUrl}" loading="lazy" alt="Screenshot preview" style="max-height:40px;border-radius:4px;border:1px solid var(--b2)"/><span class="ss-name" style="font-size:10px;color:var(--green)">${fabShot.name}</span><button class="ss-rm" onclick="clearShot()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px">×</button></div>`;
+      const ph = document.getElementById('ss-placeholder');
+      if (ph) ph.style.display = 'none';
+    }
+  }
+
+  // Close FAB and trigger generation
+  fabClose();
+  toast('✅ Transferred to main input — generating...', 'success');
+  setTimeout(() => sendDefect(), 300);
+}
+
+// FAB keyboard shortcut: Ctrl+/
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+    e.preventDefault();
+    const panel = document.getElementById('fab-panel');
+    if (panel.style.display === 'none' || !panel.style.display) fabOpen();
+    else fabClose();
+  }
+});
+
+// FAB paste screenshot support
+document.addEventListener('paste', e => {
+  const panel = document.getElementById('fab-panel');
+  if (!panel || panel.style.display === 'none') return;
+  const items = Array.from(e.clipboardData?.items || []);
+  const img = items.find(i => i.type.startsWith('image/'));
+  if (!img) return;
+  e.preventDefault();
+  const file = img.getAsFile();
+  if (file) {
+    const ext = file.type.split('/')[1] || 'png';
+    const named = new File([file], `screenshot-${Date.now()}.${ext}`, { type: file.type });
+    fabSetShot(named);
+    toast('📸 Screenshot attached to FAB!', 'success');
+  }
+});
+
+// Show tooltip on hover
+const fabBtn = document.getElementById('fab-btn');
+const fabTip = document.getElementById('fab-tip');
+if (fabBtn && fabTip) {
+  fabBtn.addEventListener('mouseenter', () => { fabTip.style.opacity = '1'; });
+  fabBtn.addEventListener('mouseleave', () => { fabTip.style.opacity = '0'; });
+}
 </script>
+
+<!-- ── FLOATING BUG REPORT BUTTON ─────────────────────── -->
+<div id="fab-wrap" style="position:fixed;bottom:24px;right:24px;z-index:150;display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+  <!-- FAB button -->
+  <button id="fab-btn" onclick="fabOpen()"
+    title="Report a new bug (Ctrl+/)"
+    style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#4f6ef7,#7c3aed);border:none;cursor:pointer;
+           display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px #4f6ef760;
+           transition:all .2s;font-size:22px"
+    onmouseenter="this.style.transform='scale(1.1)'"
+    onmouseleave="this.style.transform='scale(1)'">
+    🐛
+  </button>
+  <!-- Tooltip -->
+  <div id="fab-tip" style="background:#0d1117;border:1px solid #4f6ef740;border-radius:8px;padding:5px 10px;
+       font-size:11px;color:#7d8699;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none">
+    Report a bug
+  </div>
+</div>
+
+<!-- ── FAB QUICK INPUT PANEL ──────────────────────────── -->
+<div id="fab-panel" style="display:none;position:fixed;bottom:24px;right:24px;width:420px;max-width:calc(100vw - 32px);
+     background:#0d1117;border:2px solid #4f6ef7;border-radius:20px;z-index:160;
+     box-shadow:0 8px 40px #4f6ef740;overflow:hidden">
+  <!-- Panel header -->
+  <div style="background:linear-gradient(135deg,#4f6ef715,#7c3aed15);padding:14px 18px;
+       border-bottom:1px solid #4f6ef730;display:flex;align-items:center;gap:10px">
+    <svg width="22" height="22" viewBox="0 0 72 72" style="flex-shrink:0">
+      <defs><linearGradient id="fg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#4f6ef7"/><stop offset="100%" stop-color="#7c3aed"/>
+      </linearGradient></defs>
+      <rect width="72" height="72" rx="16" fill="url(#fg)"/>
+      <rect x="16" y="36" width="40" height="22" rx="5" fill="#fff" opacity=".9"/>
+      <rect x="22" y="27" width="28" height="13" rx="4" fill="#fff" opacity=".9"/>
+      <path d="M40 12 L32 28 L38 28 L30 48 L50 24 L42 24 Z" fill="url(#fg)"/>
+    </svg>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700;color:#e8edf5">Quick Bug Report</div>
+      <div style="font-size:10px;color:#4d5a6e">Describe → Screenshot → Generate</div>
+    </div>
+    <button onclick="fabClose()" style="background:none;border:none;color:#4d5a6e;cursor:pointer;
+            font-size:18px;padding:2px 6px;border-radius:6px;line-height:1"
+      onmouseenter="this.style.color='#e8edf5'"
+      onmouseleave="this.style.color='#4d5a6e'">✕</button>
+  </div>
+  <!-- Screenshot area -->
+  <div id="fab-ss-area" style="padding:12px 16px 0">
+    <div id="fab-ss-status" onclick="document.getElementById('file-input').click()"
+      style="border:1.5px dashed #4f6ef760;border-radius:10px;padding:10px 14px;
+             display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .2s;background:#4f6ef708"
+      onmouseenter="this.style.borderColor='#4f6ef7';this.style.background='#4f6ef714'"
+      onmouseleave="this.style.borderColor='#4f6ef760';this.style.background='#4f6ef708'">
+      <span style="font-size:18px">📸</span>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#4f6ef7">Attach Screenshot</div>
+        <div style="font-size:10px;color:#4d5a6e">Click here or paste Ctrl+V</div>
+      </div>
+      <span style="margin-left:auto;font-size:10px;color:#ef4444;font-weight:700">required</span>
+    </div>
+    <div id="fab-ss-preview" style="display:none;padding:6px 0;display:none;align-items:center;gap:8px">
+      <img id="fab-ss-img" src="" alt="Screenshot" style="height:40px;border-radius:6px;border:1px solid #4f6ef740"/>
+      <span id="fab-ss-name" style="font-size:10px;color:#10b981;flex:1"></span>
+      <button onclick="fabClearShot()" style="background:none;border:none;color:#4d5a6e;cursor:pointer;font-size:14px">✕</button>
+    </div>
+  </div>
+  <!-- Description textarea -->
+  <div style="padding:10px 16px">
+    <textarea id="fab-din" placeholder="🐛 Describe your bug...&#10;Example: Login fails on Chrome after OTP entry"
+      style="width:100%;background:#111827;border:1px solid #ffffff18;border-radius:10px;
+             padding:10px 12px;font-size:12px;color:#e8edf5;font-family:'DM Sans',sans-serif;
+             resize:none;outline:none;min-height:80px;max-height:160px;line-height:1.6;
+             transition:border-color .2s"
+      onfocus="this.style.borderColor='#4f6ef7'"
+      onblur="this.style.borderColor='#ffffff18'"
+      onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();fabGenerate()}"
+    ></textarea>
+    <div style="font-size:10px;color:#4d5a6e;margin-top:4px;text-align:right">
+      <kbd style="background:#111827;border:1px solid #ffffff18;border-radius:3px;padding:1px 4px;font-size:9px">Ctrl+Enter</kbd> to generate
+    </div>
+  </div>
+  <!-- Severity selector -->
+  <div style="padding:0 16px 12px;display:flex;align-items:center;gap:8px">
+    <span style="font-size:10px;color:#4d5a6e;font-weight:600;white-space:nowrap">Severity:</span>
+    <div style="display:flex;gap:4px;flex:1">
+      <button onclick="fabSetSev(this,'Critical')" class="fab-sev-btn"
+        style="flex:1;padding:5px 4px;border-radius:7px;font-size:10px;font-weight:700;
+               border:1px solid #ef444440;background:#ef444408;color:#ef4444;cursor:pointer;transition:all .2s">Critical</button>
+      <button onclick="fabSetSev(this,'High')" class="fab-sev-btn"
+        style="flex:1;padding:5px 4px;border-radius:7px;font-size:10px;font-weight:700;
+               border:1px solid #f59e0b40;background:#f59e0b08;color:#f59e0b;cursor:pointer;transition:all .2s">High</button>
+      <button onclick="fabSetSev(this,'Medium')" class="fab-sev-btn active"
+        style="flex:1;padding:5px 4px;border-radius:7px;font-size:10px;font-weight:700;
+               border:1px solid #3b82f640;background:#3b82f620;color:#3b82f6;cursor:pointer;transition:all .2s">Medium</button>
+      <button onclick="fabSetSev(this,'Low')" class="fab-sev-btn"
+        style="flex:1;padding:5px 4px;border-radius:7px;font-size:10px;font-weight:700;
+               border:1px solid #ffffff18;background:transparent;color:#7d8699;cursor:pointer;transition:all .2s">Low</button>
+    </div>
+  </div>
+  <!-- Generate button -->
+  <div style="padding:0 16px 16px">
+    <button onclick="fabGenerate()"
+      style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#4f6ef7,#7c3aed);
+             border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;gap:8px;
+             font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;
+             box-shadow:0 4px 14px #4f6ef740"
+      onmouseenter="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px #4f6ef760'"
+      onmouseleave="this.style.transform='';this.style.boxShadow='0 4px 14px #4f6ef740'">
+      🎯 Generate Jira Ticket
+    </button>
+  </div>
+</div>
 </body>
 </html>
