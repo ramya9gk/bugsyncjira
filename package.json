@@ -1,7 +1,7 @@
 {
-  "name": "bugforge-ai-jira",
+  "name": "bug-sync",
   "version": "4.5.0",
-  "description": "BugForge AI \u2014 Jira Edition with Teams notifications",
+  "description": "Bug Sync v2026.04.18 \u2014 Jira + Teams Edition",
   "private": true,
   "scripts": {
     "dev": "npx serve public -l 3000",

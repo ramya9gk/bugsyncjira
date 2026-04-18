@@ -1,7 +1,7 @@
 {
-  "name": "BugForge AI \u2014 Jira",
-  "short_name": "BugForge Jira",
-  "description": "BugForge AI Jira Edition \u2014 AI-powered defect ticket generator",
+  "name": "Bug Sync",
+  "short_name": "Bug Sync",
+  "description": "Bug Sync v2026.04.18 \u2014 AI-powered Jira defect agent with Teams notifications",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
