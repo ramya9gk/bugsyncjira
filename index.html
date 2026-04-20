@@ -2057,17 +2057,114 @@ async function postJira(t){
   }
   if(!CFG.jiraProj) throw new Error('Please select a Jira project from the sidebar first');
   console.log('Posting to Jira project:', CFG.jiraProj);
-  const payload={fields:{project:{key:CFG.jiraProj},issuetype:{name:'Bug'},summary:t.summary,
-    priority:{name:{P0:'Highest',P1:'High',P2:'Medium',P3:'Low'}[t.priority]||'Medium'},
-    labels:t.labels||['AI-Generated'],
-    description:{version:1,type:'doc',content:[
-      {type:'heading',attrs:{level:3},content:[{type:'text',text:'Description'}]},{type:'paragraph',content:[{type:'text',text:t.description||''}]},
-      {type:'heading',attrs:{level:3},content:[{type:'text',text:'Steps to Reproduce'}]},{type:'orderedList',content:(t.steps_to_reproduce||[]).map(s=>({type:'listItem',content:[{type:'paragraph',content:[{type:'text',text:s}]}]}))},
-      {type:'heading',attrs:{level:3},content:[{type:'text',text:'Expected'}]},{type:'paragraph',content:[{type:'text',text:t.expected_result||''}]},
-      {type:'heading',attrs:{level:3},content:[{type:'text',text:'Actual'}]},{type:'paragraph',content:[{type:'text',text:t.actual_result||''}]}
-    ]}}};
-  if(t.components?.length) payload.fields.components=t.components.map(n=>({name:n}));
-  return api('jira', { action:'create_issue', config:jiraCfg(), payload });
+
+  // ── Build description ADF defensively ──────────────────────────────
+  // Jira REST v3 requires ADF (Atlassian Document Format) but REJECTS:
+  //   - empty text nodes: { type:'text', text:'' }
+  //   - empty orderedList: { type:'orderedList', content:[] }
+  // When it hits these it falls into update-semantics and throws
+  //   "No operation with name 'set' found"
+  // So: only include sections that have real content, filter empty items.
+  const adfContent = [];
+  const addSection = (heading, bodyText) => {
+    const trimmed = (bodyText || '').trim();
+    if(!trimmed) return;
+    adfContent.push(
+      { type:'heading', attrs:{level:3}, content:[{ type:'text', text:heading }] },
+      { type:'paragraph', content:[{ type:'text', text:trimmed }] }
+    );
+  };
+  addSection('Description', t.description);
+
+  const steps = (t.steps_to_reproduce || [])
+    .map(s => (s || '').trim())
+    .filter(Boolean);
+  if(steps.length){
+    adfContent.push(
+      { type:'heading', attrs:{level:3}, content:[{ type:'text', text:'Steps to Reproduce' }] },
+      { type:'orderedList', content: steps.map(s => ({
+          type:'listItem',
+          content:[{ type:'paragraph', content:[{ type:'text', text:s }] }]
+        })) }
+    );
+  }
+
+  addSection('Expected', t.expected_result);
+  addSection('Actual',   t.actual_result);
+  addSection('Environment', t.environment);
+
+  const acceptance = (t.acceptance_criteria || [])
+    .map(c => (c || '').trim())
+    .filter(Boolean);
+  if(acceptance.length){
+    adfContent.push(
+      { type:'heading', attrs:{level:3}, content:[{ type:'text', text:'Acceptance Criteria' }] },
+      { type:'orderedList', content: acceptance.map(c => ({
+          type:'listItem',
+          content:[{ type:'paragraph', content:[{ type:'text', text:c }] }]
+        })) }
+    );
+  }
+
+  // Guarantee the document has at least one valid node
+  if(adfContent.length === 0){
+    adfContent.push({
+      type:'paragraph',
+      content:[{ type:'text', text: (t.summary || 'AI-generated bug ticket').trim() || 'Bug ticket' }]
+    });
+  }
+
+  // ── Build fields payload ────────────────────────────────────────────
+  const fields = {
+    project:   { key: CFG.jiraProj },
+    issuetype: { name: 'Bug' },
+    summary:   (t.summary || '').trim() || 'Untitled bug',
+    description: { version:1, type:'doc', content: adfContent }
+  };
+
+  // Priority: only include if AI provided a recognised value
+  const priMap = { P0:'Highest', P1:'High', P2:'Medium', P3:'Low' };
+  if(t.priority && priMap[t.priority]){
+    fields.priority = { name: priMap[t.priority] };
+  }
+
+  // Labels: include only non-empty strings
+  const cleanLabels = (Array.isArray(t.labels) ? t.labels : [])
+    .map(l => typeof l === 'string' ? l.trim() : '')
+    .filter(Boolean);
+  if(cleanLabels.length){
+    fields.labels = cleanLabels;
+  } else {
+    fields.labels = ['AI-Generated'];
+  }
+
+  // Components: only include if AI returned real component names
+  // (Jira rejects components that don't exist in the project — retry logic below handles that)
+  const cleanComponents = (Array.isArray(t.components) ? t.components : [])
+    .map(n => typeof n === 'string' ? n.trim() : '')
+    .filter(Boolean);
+  if(cleanComponents.length){
+    fields.components = cleanComponents.map(name => ({ name }));
+  }
+
+  // ── Try creating with full payload, fall back on specific errors ────
+  try {
+    return await api('jira', { action:'create_issue', config:jiraCfg(), payload:{ fields } });
+  } catch(err){
+    const msg = (err.message || '').toLowerCase();
+    // If the failure mentions components or the dreaded "set" operation,
+    // retry once without components + priority (the two field-schema troublemakers).
+    const isFieldSchemaError = msg.includes('component')
+      || msg.includes("operation with name 'set'")
+      || msg.includes('cannot be set')
+      || msg.includes('not on the appropriate screen');
+    if(!isFieldSchemaError) throw err;
+
+    console.warn('Jira create failed; retrying without components & priority:', err.message);
+    delete fields.components;
+    delete fields.priority;
+    return await api('jira', { action:'create_issue', config:jiraCfg(), payload:{ fields } });
+  }
 }
 // ADO POST
 async function postADO(t){
