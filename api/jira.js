@@ -135,11 +135,17 @@ export default async function handler(req, res) {
 
         const d = await r.json();
         if (!r.ok) {
-          const errMsg = d.errorMessages?.[0]
-            || Object.entries(d.errors || {}).map(([k, v]) => `${k}: ${v}`).join(', ')
-            || d.message
-            || `Jira ${r.status}`;
-          return res.status(r.status).json({ error: errMsg });
+          // Surface ALL error details — both top-level messages and per-field errors.
+          // This is what tells us exactly which field Jira is rejecting (e.g.
+          // "components: Component name 'XYZ' is not valid" or "priority: Field cannot be set").
+          const topMessages = Array.isArray(d.errorMessages) ? d.errorMessages : [];
+          const fieldErrors = Object.entries(d.errors || {}).map(([k, v]) => `${k}: ${v}`);
+          const allDetails = [...topMessages, ...fieldErrors].filter(Boolean);
+          const errMsg = allDetails.length
+            ? allDetails.join(' | ')
+            : (d.message || `Jira ${r.status}`);
+          console.error('Jira create_issue failed:', JSON.stringify({ status: r.status, response: d, sentFields: Object.keys(fields) }));
+          return res.status(r.status).json({ error: errMsg, jiraResponse: d });
         }
         return res.json({ id: d.key, url: `${base}/browse/${d.key}` });
       }
